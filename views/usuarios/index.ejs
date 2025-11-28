@@ -41,18 +41,25 @@
             <td><%= usuario.email %></td>
             <td><%= usuario.empresa_nombre || 'N/A' %></td>
             <td>
-              <% if (user.rol === 'admin' || user.rol === 'superadmin') { %>
+              <% if (user.rol === 'skn_admin') { %>
                 <form action="/usuarios/<%= usuario.id %>/cambiar-rol" method="POST" style="display: inline;">
-                  <select name="rol" onchange="this.form.submit()">
-                    <option value="usuario" <%= usuario.rol === 'usuario' ? 'selected' : '' %>>Usuario</option>
-                    <option value="admin" <%= usuario.rol === 'admin' ? 'selected' : '' %>>Admin</option>
-                    <% if (user.rol === 'superadmin') { %>
-                      <option value="superadmin" <%= usuario.rol === 'superadmin' ? 'selected' : '' %>>Superadmin</option>
-                    <% } %>
+                  <select name="rol" onchange="this.form.submit()" class="<%= usuario.rol.startsWith('skn_') ? 'badge-success' : 'badge-secondary' %>">
+                    <option value="skn_admin" <%= usuario.rol === 'skn_admin' ? 'selected' : '' %>>SKN Admin</option>
+                    <option value="skn_user" <%= usuario.rol === 'skn_user' ? 'selected' : '' %>>SKN Usuario</option>
+                    <option value="empresa_admin" <%= usuario.rol === 'empresa_admin' ? 'selected' : '' %>>Empresa Admin</option>
+                    <option value="empresa_user" <%= usuario.rol === 'empresa_user' ? 'selected' : '' %>>Empresa Usuario</option>
                   </select>
                 </form>
               <% } else { %>
-                <%= usuario.rol %>
+                <% if (usuario.rol === 'skn_admin') { %>
+                  <span class="badge badge-danger">SKN Admin</span>
+                <% } else if (usuario.rol === 'skn_user') { %>
+                  <span class="badge badge-success">SKN Usuario</span>
+                <% } else if (usuario.rol === 'empresa_admin') { %>
+                  <span class="badge badge-warning">Empresa Admin</span>
+                <% } else { %>
+                  <span class="badge badge-secondary">Empresa Usuario</span>
+                <% } %>
               <% } %>
             </td>
             <td>

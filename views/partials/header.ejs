@@ -14,11 +14,18 @@
 
       <ul class="nav-menu" id="navMenu">
         <li><a href="/dashboard">Dashboard</a></li>
-        <li><a href="/inventario">Inventario</a></li>
-        <li><a href="/tickets">Tickets</a></li>
-        <li><a href="/visitas">Visitas</a></li>
         
-        <% if (user.rol === 'admin' || user.rol === 'superadmin') { %>
+        <% if (user.rol === 'skn_admin' || user.rol === 'skn_user' || user.rol === 'empresa_admin') { %>
+          <li><a href="/inventario">Inventario</a></li>
+        <% } %>
+        
+        <li><a href="/tickets">Tickets</a></li>
+        
+        <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
+          <li><a href="/visitas">Visitas</a></li>
+        <% } %>
+        
+        <% if (user.rol === 'skn_admin' || user.rol === 'empresa_admin') { %>
           <li><a href="/usuarios">Usuarios</a></li>
         <% } %>
       </ul>

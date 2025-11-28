@@ -36,8 +36,19 @@
         </div>
 
         <div class="form-group">
-          <label for="empresa_id">Empresa</label>
-          <select id="empresa_id" name="empresa_id" required>
+          <label>
+            <input type="radio" name="tipo_registro" value="existente" checked id="radio_existente"> 
+            Empresa Existente
+          </label>
+          <label style="margin-left: 15px;">
+            <input type="radio" name="tipo_registro" value="nueva" id="radio_nueva"> 
+            Nueva Empresa
+          </label>
+        </div>
+
+        <div class="form-group" id="empresa_existente">
+          <label for="empresa_id">Seleccionar Empresa</label>
+          <select id="empresa_id" name="empresa_id">
             <option value="">Seleccionar empresa</option>
             <% empresas.forEach(empresa => { %>
               <option value="<%= empresa.id %>"><%= empresa.nombre %></option>
@@ -45,8 +56,64 @@
           </select>
         </div>
 
+        <div id="empresa_nueva" style="display: none;">
+          <div class="form-group">
+            <label for="empresa_nombre">Nombre de la Empresa</label>
+            <input type="text" id="empresa_nombre" name="empresa_nombre" placeholder="Mi Empresa S.A.">
+          </div>
+
+          <div class="form-group">
+            <label for="empresa_cuit">CUIT/RUC</label>
+            <input type="text" id="empresa_cuit" name="empresa_cuit" placeholder="20-12345678-9">
+          </div>
+
+          <div class="form-group">
+            <label for="empresa_direccion">Dirección</label>
+            <input type="text" id="empresa_direccion" name="empresa_direccion" placeholder="Av. Principal 123">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="empresa_telefono">Teléfono</label>
+              <input type="tel" id="empresa_telefono" name="empresa_telefono" placeholder="+54 11 1234-5678">
+            </div>
+
+            <div class="form-group">
+              <label for="empresa_email">Email Empresa</label>
+              <input type="email" id="empresa_email" name="empresa_email" placeholder="contacto@empresa.com">
+            </div>
+          </div>
+        </div>
+
         <button type="submit" class="btn-primary btn-full">Registrarse</button>
       </form>
+
+      <script>
+        const radioExistente = document.getElementById('radio_existente');
+        const radioNueva = document.getElementById('radio_nueva');
+        const divExistente = document.getElementById('empresa_existente');
+        const divNueva = document.getElementById('empresa_nueva');
+        const selectEmpresa = document.getElementById('empresa_id');
+        const inputsNuevaEmpresa = divNueva.querySelectorAll('input');
+
+        function toggleEmpresa() {
+          if (radioNueva.checked) {
+            divExistente.style.display = 'none';
+            divNueva.style.display = 'block';
+            selectEmpresa.removeAttribute('required');
+            inputsNuevaEmpresa.forEach(input => input.setAttribute('required', 'required'));
+          } else {
+            divExistente.style.display = 'block';
+            divNueva.style.display = 'none';
+            selectEmpresa.setAttribute('required', 'required');
+            inputsNuevaEmpresa.forEach(input => input.removeAttribute('required'));
+          }
+        }
+
+        radioExistente.addEventListener('change', toggleEmpresa);
+        radioNueva.addEventListener('change', toggleEmpresa);
+        toggleEmpresa();
+      </script>
 
       <p class="auth-link">¿Ya tienes cuenta? <a href="/auth/login">Inicia sesión aquí</a></p>
       

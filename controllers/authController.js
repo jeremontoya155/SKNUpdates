@@ -72,7 +72,8 @@ const authController = {
 
   // Procesar registro
   register: async (req, res) => {
-    const { nombre, email, password, empresa_id } = req.body;
+    const { nombre, email, password, empresa_id, tipo_registro, 
+            empresa_nombre, empresa_cuit, empresa_direccion, empresa_telefono, empresa_email } = req.body;
 
     try {
       // Verificar si el email ya existe
@@ -82,16 +83,45 @@ const authController = {
         return res.redirect('/auth/register');
       }
 
+      let empresaId = empresa_id;
+      let rolUsuario = 'empresa_user';
+
+      // Si está creando una nueva empresa
+      if (tipo_registro === 'nueva') {
+        // Verificar que el nombre de empresa no exista
+        const existeEmpresa = await db.query('SELECT id FROM empresas WHERE nombre = $1', [empresa_nombre]);
+        if (existeEmpresa.rows.length > 0) {
+          req.session.error = 'Ya existe una empresa con ese nombre';
+          return res.redirect('/auth/register');
+        }
+
+        // Crear la nueva empresa
+        const nuevaEmpresa = await db.query(
+          `INSERT INTO empresas (nombre, cuit, direccion, telefono, email, activo) 
+           VALUES ($1, $2, $3, $4, $5, false) 
+           RETURNING id`,
+          [empresa_nombre, empresa_cuit, empresa_direccion, empresa_telefono, empresa_email]
+        );
+        
+        empresaId = nuevaEmpresa.rows[0].id;
+        rolUsuario = 'empresa_admin'; // El que crea la empresa es admin de esa empresa
+      }
+
       // Hash de la contraseña
       const passwordHash = await bcrypt.hash(password, 10);
 
-      // Insertar usuario (activo = false por defecto)
+      // Insertar usuario (activo = false por defecto, debe ser aprobado por SKN)
       await db.query(
         'INSERT INTO usuarios (nombre, email, password_hash, empresa_id, rol, activo) VALUES ($1, $2, $3, $4, $5, $6)',
-        [nombre, email, passwordHash, empresa_id, 'usuario', false]
+        [nombre, email, passwordHash, empresaId, rolUsuario, false]
       );
 
-      req.session.message = 'Registro exitoso. Tu cuenta está pendiente de aprobación por un administrador.';
+      if (tipo_registro === 'nueva') {
+        req.session.message = 'Registro exitoso. Tu empresa y cuenta están pendientes de aprobación por SKN.';
+      } else {
+        req.session.message = 'Registro exitoso. Tu cuenta está pendiente de aprobación por un administrador.';
+      }
+      
       res.redirect('/auth/login');
     } catch (error) {
       console.error('Error en registro:', error);

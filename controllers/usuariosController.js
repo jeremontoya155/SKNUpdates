@@ -2,19 +2,21 @@ const db = require('../database');
 const bcrypt = require('bcrypt');
 
 const usuariosController = {
-  // Listar usuarios (admin y superadmin)
+  // Listar usuarios
   index: async (req, res) => {
     try {
       const user = req.session.user;
       let query, params;
 
-      if (user.rol === 'superadmin') {
+      if (user.rol === 'skn_admin') {
+        // SKN admin ve todos los usuarios
         query = `SELECT u.*, e.nombre as empresa_nombre 
                  FROM usuarios u 
                  LEFT JOIN empresas e ON u.empresa_id = e.id 
                  ORDER BY u.fecha_registro DESC`;
         params = [];
-      } else if (user.rol === 'admin') {
+      } else if (user.rol === 'empresa_admin') {
+        // Admin de empresa solo ve usuarios de su empresa
         query = `SELECT u.*, e.nombre as empresa_nombre 
                  FROM usuarios u 
                  LEFT JOIN empresas e ON u.empresa_id = e.id 
@@ -33,18 +35,15 @@ const usuariosController = {
     }
   },
 
-  // Aprobar usuario (admin)
+  // Aprobar usuario (solo SKN admin puede aprobar cualquier usuario)
   aprobar: async (req, res) => {
     const { id } = req.params;
     const user = req.session.user;
 
     try {
-      // Verificar que el usuario a aprobar pertenece a la misma empresa
-      if (user.rol === 'admin') {
-        const usuarioAprobar = await db.query('SELECT empresa_id FROM usuarios WHERE id = $1', [id]);
-        if (usuarioAprobar.rows.length === 0 || usuarioAprobar.rows[0].empresa_id !== user.empresa_id) {
-          return res.status(403).send('No tienes permisos');
-        }
+      // Solo SKN admin puede aprobar usuarios
+      if (user.rol !== 'skn_admin') {
+        return res.status(403).send('Solo administradores de SKN pueden aprobar usuarios');
       }
 
       await db.query(
@@ -67,8 +66,9 @@ const usuariosController = {
     const user = req.session.user;
 
     try {
-      // Verificar permisos
-      if (user.rol === 'admin') {
+      // SKN admin puede desactivar a cualquiera
+      // Empresa admin solo puede desactivar usuarios de su empresa
+      if (user.rol === 'empresa_admin') {
         const usuarioDesactivar = await db.query('SELECT empresa_id FROM usuarios WHERE id = $1', [id]);
         if (usuarioDesactivar.rows.length === 0 || usuarioDesactivar.rows[0].empresa_id !== user.empresa_id) {
           return res.status(403).send('No tienes permisos');
@@ -86,23 +86,23 @@ const usuariosController = {
     }
   },
 
-  // Cambiar rol
+  // Cambiar rol (solo SKN admin)
   cambiarRol: async (req, res) => {
     const { id } = req.params;
     const { rol } = req.body;
     const user = req.session.user;
 
     try {
-      // Solo admin puede cambiar roles en su empresa
-      if (user.rol !== 'admin' && user.rol !== 'superadmin') {
-        return res.status(403).send('No tienes permisos');
+      // Solo SKN admin puede cambiar roles
+      if (user.rol !== 'skn_admin') {
+        return res.status(403).send('Solo administradores de SKN pueden cambiar roles');
       }
 
-      if (user.rol === 'admin') {
-        const usuarioCambiar = await db.query('SELECT empresa_id FROM usuarios WHERE id = $1', [id]);
-        if (usuarioCambiar.rows.length === 0 || usuarioCambiar.rows[0].empresa_id !== user.empresa_id) {
-          return res.status(403).send('No tienes permisos');
-        }
+      // Validar que el rol sea válido
+      const rolesValidos = ['skn_admin', 'skn_user', 'empresa_admin', 'empresa_user'];
+      if (!rolesValidos.includes(rol)) {
+        req.session.error = 'Rol inválido';
+        return res.redirect('/usuarios');
       }
 
       await db.query('UPDATE usuarios SET rol = $1 WHERE id = $2', [rol, id]);

@@ -5,19 +5,89 @@ const inventarioController = {
   index: async (req, res) => {
     try {
       const user = req.session.user;
-      const result = await db.query(
-        `SELECT m.*, c.nombre as categoria_nombre 
-         FROM materiales m 
-         LEFT JOIN categorias_materiales c ON m.categoria_id = c.id 
-         WHERE m.empresa_id = $1 AND m.activo = true 
-         ORDER BY m.nombre`,
-        [user.empresa_id]
+      const { buscar, categoria, empresa, stock } = req.query;
+      
+      let query = `
+        SELECT m.*, c.nombre as categoria_nombre, e.nombre as empresa_nombre
+        FROM materiales m 
+        LEFT JOIN categorias_materiales c ON m.categoria_id = c.id 
+        LEFT JOIN empresas e ON m.empresa_id = e.id
+        WHERE m.activo = true
+      `;
+      
+      const params = [];
+      let paramIndex = 1;
+
+      // Filtro por empresa: SKN ve todo, empresas solo ven lo suyo
+      if (user.rol === 'skn_admin' || user.rol === 'skn_user') {
+        // SKN puede filtrar por empresa específica o ver todas
+        if (empresa && empresa !== 'todas') {
+          query += ` AND m.empresa_id = $${paramIndex}`;
+          params.push(empresa);
+          paramIndex++;
+        }
+      } else {
+        // Empresas solo ven sus materiales
+        query += ` AND m.empresa_id = $${paramIndex}`;
+        params.push(user.empresa_id);
+        paramIndex++;
+      }
+
+      // Búsqueda por nombre o código
+      if (buscar) {
+        query += ` AND (LOWER(m.nombre) LIKE LOWER($${paramIndex}) OR LOWER(m.codigo) LIKE LOWER($${paramIndex}))`;
+        params.push(`%${buscar}%`);
+        paramIndex++;
+      }
+
+      // Filtro por categoría
+      if (categoria) {
+        query += ` AND m.categoria_id = $${paramIndex}`;
+        params.push(categoria);
+        paramIndex++;
+      }
+
+      // Filtro por stock
+      if (stock === 'bajo') {
+        query += ` AND m.cantidad_actual <= m.stock_minimo`;
+      } else if (stock === 'agotado') {
+        query += ` AND m.cantidad_actual = 0`;
+      }
+
+      query += ` ORDER BY m.nombre`;
+
+      const result = await db.query(query, params);
+
+      // Obtener categorías para el filtro
+      const categorias = await db.query(
+        'SELECT * FROM categorias_materiales WHERE activo = true ORDER BY nombre'
       );
 
-      res.render('inventario/index', { title: 'Inventario', materiales: result.rows });
+      // Obtener empresas para el filtro (solo si es SKN)
+      let empresas = [];
+      if (user.rol === 'skn_admin' || user.rol === 'skn_user') {
+        const empresasResult = await db.query(
+          'SELECT id, nombre FROM empresas WHERE activo = true ORDER BY nombre'
+        );
+        empresas = empresasResult.rows;
+      }
+
+      res.render('inventario/index', { 
+        title: 'Inventario', 
+        materiales: result.rows,
+        categorias: categorias.rows,
+        empresas: empresas,
+        filtros: { buscar, categoria, empresa, stock }
+      });
     } catch (error) {
       console.error('Error al listar materiales:', error);
-      res.render('inventario/index', { title: 'Inventario', materiales: [] });
+      res.render('inventario/index', { 
+        title: 'Inventario', 
+        materiales: [],
+        categorias: [],
+        empresas: [],
+        filtros: {}
+      });
     }
   },
 
