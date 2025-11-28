@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <h1>Nueva Visita</h1>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <form action="/visitas/nuevo" method="POST" class="form">
+      <h3>Información del Visitante</h3>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="visitante_nombre">Nombre del Visitante *</label>
+          <input type="text" id="visitante_nombre" name="visitante_nombre" required>
+        </div>
+
+        <div class="form-group">
+          <label for="visitante_empresa">Empresa</label>
+          <input type="text" id="visitante_empresa" name="visitante_empresa">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="visitante_documento">Documento</label>
+        <input type="text" id="visitante_documento" name="visitante_documento">
+      </div>
+
+      <h3>Información de la Visita</h3>
+
+      <div class="form-group">
+        <label for="usuario_visitado">Persona a Visitar *</label>
+        <select id="usuario_visitado" name="usuario_visitado" required>
+          <option value="">Seleccionar usuario</option>
+          <% usuarios.forEach(u => { %>
+            <option value="<%= u.id %>"><%= u.nombre %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="motivo_visita">Motivo de la Visita *</label>
+        <textarea id="motivo_visita" name="motivo_visita" rows="4" required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_visita">Fecha y Hora de la Visita *</label>
+        <input type="datetime-local" id="fecha_visita" name="fecha_visita" required>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Registrar Visita</button>
+        <a href="/visitas" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

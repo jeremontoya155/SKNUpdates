@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <h1>Nuevo Material</h1>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <form action="/inventario/nuevo" method="POST" class="form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="nombre">Nombre *</label>
+          <input type="text" id="nombre" name="nombre" required>
+        </div>
+
+        <div class="form-group">
+          <label for="codigo">Código</label>
+          <input type="text" id="codigo" name="codigo">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="descripcion">Descripción</label>
+        <textarea id="descripcion" name="descripcion" rows="3"></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="categoria_id">Categoría</label>
+          <select id="categoria_id" name="categoria_id" onchange="this.form.action='/inventario/nuevo?categoria_id=' + this.value; this.form.method='GET'; this.form.submit();">
+            <option value="">Sin categoría</option>
+            <% categorias.forEach(cat => { %>
+              <option value="<%= cat.id %>" <%= categoriaId == cat.id ? 'selected' : '' %>><%= cat.nombre %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="unidad_medida">Unidad de Medida</label>
+          <input type="text" id="unidad_medida" name="unidad_medida" placeholder="ej: unidades, kg, litros">
+        </div>
+      </div>
+
+      <% if (atributos && atributos.length > 0) { %>
+        <div class="atributos-section">
+          <h3>Características Específicas</h3>
+          <% atributos.forEach(attr => { %>
+            <div class="form-group">
+              <label for="atributo_<%= attr.id %>">
+                <%= attr.nombre %> 
+                <% if (attr.requerido) { %><span style="color: red;">*</span><% } %>
+              </label>
+              
+              <% if (attr.tipo_dato === 'texto') { %>
+                <input type="text" id="atributo_<%= attr.id %>" name="atributo_<%= attr.id %>" <%= attr.requerido ? 'required' : '' %>>
+              <% } else if (attr.tipo_dato === 'numero') { %>
+                <input type="number" id="atributo_<%= attr.id %>" name="atributo_<%= attr.id %>" step="any" <%= attr.requerido ? 'required' : '' %>>
+              <% } else if (attr.tipo_dato === 'fecha') { %>
+                <input type="date" id="atributo_<%= attr.id %>" name="atributo_<%= attr.id %>" <%= attr.requerido ? 'required' : '' %>>
+              <% } else if (attr.tipo_dato === 'seleccion' && attr.opciones) { %>
+                <select id="atributo_<%= attr.id %>" name="atributo_<%= attr.id %>" <%= attr.requerido ? 'required' : '' %>>
+                  <option value="">Seleccionar...</option>
+                  <% attr.opciones.split(',').forEach(opcion => { %>
+                    <option value="<%= opcion.trim() %>"><%= opcion.trim() %></option>
+                  <% }) %>
+                </select>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="stock_actual">Stock Inicial</label>
+          <input type="number" id="stock_actual" name="stock_actual" value="0" min="0">
+        </div>
+
+        <div class="form-group">
+          <label for="stock_minimo">Stock Mínimo</label>
+          <input type="number" id="stock_minimo" name="stock_minimo" value="0" min="0">
+        </div>
+
+        <div class="form-group">
+          <label for="precio_unitario">Precio Unitario</label>
+          <input type="number" id="precio_unitario" name="precio_unitario" value="0" min="0" step="0.01">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Guardar Material</button>
+        <a href="/inventario" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

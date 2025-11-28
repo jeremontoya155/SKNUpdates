@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="dashboard-container">
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="page-header">
+      <h1>Dashboard</h1>
+    </div>
+
+    <div class="stats-grid">
+      <% if (user.rol === 'superadmin') { %>
+        <div class="stat-card stat-blue">
+          <div class="stat-icon">🏢</div>
+          <div class="stat-content">
+            <h3>Empresas</h3>
+            <p class="stat-number"><%= stats.empresas || 0 %></p>
+          </div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-icon">👥</div>
+          <div class="stat-content">
+            <h3>Usuarios</h3>
+            <p class="stat-number"><%= stats.usuarios || 0 %></p>
+          </div>
+        </div>
+        <div class="stat-card stat-orange">
+          <div class="stat-icon">🎫</div>
+          <div class="stat-content">
+            <h3>Tickets Abiertos</h3>
+            <p class="stat-number"><%= stats.tickets || 0 %></p>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="stat-card stat-blue">
+          <div class="stat-icon">📦</div>
+          <div class="stat-content">
+            <h3>Materiales</h3>
+            <p class="stat-number"><%= stats.materiales || 0 %></p>
+          </div>
+        </div>
+        <div class="stat-card stat-red">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-content">
+            <h3>Stock Bajo</h3>
+            <p class="stat-number"><%= stats.materialesBajos || 0 %></p>
+          </div>
+        </div>
+        <div class="stat-card stat-orange">
+          <div class="stat-icon">🎫</div>
+          <div class="stat-content">
+            <h3>Tickets Abiertos</h3>
+            <p class="stat-number"><%= stats.tickets || 0 %></p>
+          </div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-icon">📅</div>
+          <div class="stat-content">
+            <h3>Visitas Programadas</h3>
+            <p class="stat-number"><%= stats.visitas || 0 %></p>
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="quick-actions">
+      <h2>Acciones Rápidas</h2>
+      <div class="actions-grid">
+        <a href="/inventario/nuevo" class="action-card action-primary">
+          <span class="action-icon">📦</span>
+          <span>Nuevo Material</span>
+        </a>
+        <a href="/tickets/nuevo" class="action-card action-warning">
+          <span class="action-icon">🎫</span>
+          <span>Nuevo Ticket</span>
+        </a>
+        <a href="/visitas/nuevo" class="action-card action-success">
+          <span class="action-icon">📅</span>
+          <span>Nueva Visita</span>
+        </a>
+        <a href="/inventario/categorias" class="action-card action-secondary">
+          <span class="action-icon">📋</span>
+          <span>Categorías</span>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

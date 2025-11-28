@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="page-header">
+      <h1>Atributos de: <%= categoria.nombre %></h1>
+      <a href="/inventario/categorias" class="btn btn-secondary">Volver a Categorías</a>
+    </div>
+
+    <div class="info-box">
+      <p><strong>Descripción:</strong> <%= categoria.descripcion || 'Sin descripción' %></p>
+      <p>Define qué características específicas tendrán los materiales de esta categoría (ej: para Notebooks: Marca, RAM, Procesador, etc.)</p>
+    </div>
+
+    <div class="categoria-form">
+      <h3>Nuevo Atributo</h3>
+      <form action="/inventario/categorias/atributos" method="POST">
+        <input type="hidden" name="categoria_id" value="<%= categoria.id %>">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nombre">Nombre del Atributo *</label>
+            <input type="text" id="nombre" name="nombre" placeholder="ej: Marca, RAM, Procesador" required>
+          </div>
+
+          <div class="form-group">
+            <label for="tipo_dato">Tipo de Dato</label>
+            <select id="tipo_dato" name="tipo_dato" onchange="toggleOpciones()">
+              <option value="texto">Texto</option>
+              <option value="numero">Número</option>
+              <option value="fecha">Fecha</option>
+              <option value="seleccion">Selección (lista)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" id="opciones_group" style="display: none;">
+          <label for="opciones">Opciones (separadas por comas)</label>
+          <input type="text" id="opciones" name="opciones" placeholder="ej: Windows, Linux, Mac OS">
+          <small>Solo para tipo "Selección"</small>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" name="requerido"> Campo requerido
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Agregar Atributo</button>
+      </form>
+    </div>
+
+    <h3>Atributos Actuales</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Orden</th>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Requerido</th>
+          <th>Opciones</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% atributos.forEach(attr => { %>
+          <tr>
+            <td><%= attr.orden %></td>
+            <td><%= attr.nombre %></td>
+            <td><span class="badge badge-secondary"><%= attr.tipo_dato %></span></td>
+            <td>
+              <% if (attr.requerido) { %>
+                <span class="badge badge-warning">Sí</span>
+              <% } else { %>
+                <span class="badge badge-secondary">No</span>
+              <% } %>
+            </td>
+            <td><%= attr.opciones || '-' %></td>
+            <td>
+              <% if (attr.activo) { %>
+                <span class="badge badge-success">Activo</span>
+              <% } else { %>
+                <span class="badge badge-secondary">Inactivo</span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+
+        <% if (atributos.length === 0) { %>
+          <tr>
+            <td colspan="6" style="text-align: center;">No hay atributos definidos para esta categoría</td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+
+    <div class="info-box" style="margin-top: 20px;">
+      <h4>💡 Ejemplos de Atributos por Categoría:</h4>
+      <ul>
+        <li><strong>Notebooks:</strong> Marca, Modelo, Procesador, RAM (GB), Disco Duro, Pantalla, Sistema Operativo</li>
+        <li><strong>Impresoras:</strong> Marca, Modelo, Tipo (Láser/Tinta), Conexión (USB/Red/WiFi), Tipo de Cartucho</li>
+        <li><strong>Monitores:</strong> Marca, Modelo, Tamaño, Resolución, Tipo de Panel, Conexiones</li>
+        <li><strong>Componentes:</strong> Tipo, Marca, Modelo, Especificaciones, Compatible con</li>
+      </ul>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+  
+  <script>
+    function toggleOpciones() {
+      const tipo = document.getElementById('tipo_dato').value;
+      const opcionesGroup = document.getElementById('opciones_group');
+      if (tipo === 'seleccion') {
+        opcionesGroup.style.display = 'block';
+      } else {
+        opcionesGroup.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="page-header">
+      <h1>Tickets / Solicitudes</h1>
+      <a href="/tickets/nuevo" class="btn btn-primary">+ Nuevo Ticket</a>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Título</th>
+          <th>Solicitante</th>
+          <th>Estado</th>
+          <th>Prioridad</th>
+          <th>Asignado a</th>
+          <th>Fecha Creación</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% tickets.forEach(ticket => { %>
+          <tr>
+            <td>#<%= ticket.id %></td>
+            <td><%= ticket.titulo %></td>
+            <td><%= ticket.solicitante_nombre %></td>
+            <td><span class="badge badge-<%= ticket.estado %>"><%= ticket.estado %></span></td>
+            <td><span class="badge badge-prioridad-<%= ticket.prioridad %>"><%= ticket.prioridad %></span></td>
+            <td><%= ticket.asignado_nombre || 'Sin asignar' %></td>
+            <td><%= new Date(ticket.fecha_creacion).toLocaleDateString('es-ES') %></td>
+            <td>
+              <a href="/tickets/<%= ticket.id %>" class="btn-small">Ver Detalle</a>
+            </td>
+          </tr>
+        <% }) %>
+
+        <% if (tickets.length === 0) { %>
+          <tr>
+            <td colspan="8" style="text-align: center;">No hay tickets registrados</td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

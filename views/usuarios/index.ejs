@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <h1>Gestión de Usuarios</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Empresa</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Fecha Registro</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% usuarios.forEach(usuario => { %>
+          <tr>
+            <td><%= usuario.id %></td>
+            <td><%= usuario.nombre %></td>
+            <td><%= usuario.email %></td>
+            <td><%= usuario.empresa_nombre || 'N/A' %></td>
+            <td>
+              <% if (user.rol === 'admin' || user.rol === 'superadmin') { %>
+                <form action="/usuarios/<%= usuario.id %>/cambiar-rol" method="POST" style="display: inline;">
+                  <select name="rol" onchange="this.form.submit()">
+                    <option value="usuario" <%= usuario.rol === 'usuario' ? 'selected' : '' %>>Usuario</option>
+                    <option value="admin" <%= usuario.rol === 'admin' ? 'selected' : '' %>>Admin</option>
+                    <% if (user.rol === 'superadmin') { %>
+                      <option value="superadmin" <%= usuario.rol === 'superadmin' ? 'selected' : '' %>>Superadmin</option>
+                    <% } %>
+                  </select>
+                </form>
+              <% } else { %>
+                <%= usuario.rol %>
+              <% } %>
+            </td>
+            <td>
+              <% if (usuario.activo) { %>
+                <span class="badge badge-success">Activo</span>
+              <% } else { %>
+                <span class="badge badge-warning">Pendiente</span>
+              <% } %>
+            </td>
+            <td><%= new Date(usuario.fecha_registro).toLocaleDateString('es-ES') %></td>
+            <td>
+              <% if (!usuario.activo) { %>
+                <form action="/usuarios/<%= usuario.id %>/aprobar" method="POST" style="display: inline;">
+                  <button type="submit" class="btn-small btn-success">Aprobar</button>
+                </form>
+              <% } else { %>
+                <form action="/usuarios/<%= usuario.id %>/desactivar" method="POST" style="display: inline;">
+                  <button type="submit" class="btn-small btn-danger">Desactivar</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

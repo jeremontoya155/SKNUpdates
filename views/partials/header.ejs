@@ -1,0 +1,55 @@
+<header>
+  <nav>
+    <div class="nav-container">
+      <div class="logo">
+        <img src="/images/logo.png" alt="SKN Logo" class="logo-img">
+        <h1>Sistema de Inventario</h1>
+      </div>
+      
+      <button class="hamburger" id="hamburger" aria-label="Menú">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/inventario">Inventario</a></li>
+        <li><a href="/tickets">Tickets</a></li>
+        <li><a href="/visitas">Visitas</a></li>
+        
+        <% if (user.rol === 'admin' || user.rol === 'superadmin') { %>
+          <li><a href="/usuarios">Usuarios</a></li>
+        <% } %>
+      </ul>
+
+      <div class="user-info">
+        <span class="user-name"><%= user.nombre %></span>
+        <span class="user-role">(<%= user.rol %>)</span>
+        <% if (user.empresa_nombre) { %>
+          <span class="user-company"> | <%= user.empresa_nombre %></span>
+        <% } %>
+        <a href="/auth/logout" class="logout-btn">Cerrar Sesión</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<script>
+  // Toggle menú hamburguesa
+  const hamburger = document.getElementById('hamburger');
+  const navMenu = document.getElementById('navMenu');
+  
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('active');
+    navMenu.classList.toggle('active');
+  });
+
+  // Cerrar menú al hacer click en un enlace
+  navMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      hamburger.classList.remove('active');
+      navMenu.classList.remove('active');
+    });
+  });
+</script>

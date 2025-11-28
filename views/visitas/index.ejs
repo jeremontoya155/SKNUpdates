@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="page-header">
+      <h1>Registro de Visitas</h1>
+      <a href="/visitas/nuevo" class="btn btn-primary">+ Nueva Visita</a>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Visitante</th>
+          <th>Empresa</th>
+          <th>Visitado</th>
+          <th>Motivo</th>
+          <th>Fecha Visita</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% visitas.forEach(visita => { %>
+          <tr>
+            <td>#<%= visita.id %></td>
+            <td><%= visita.visitante_nombre %></td>
+            <td><%= visita.visitante_empresa || '-' %></td>
+            <td><%= visita.visitado_nombre %></td>
+            <td><%= visita.motivo_visita.substring(0, 50) %>...</td>
+            <td><%= new Date(visita.fecha_visita).toLocaleString('es-ES') %></td>
+            <td><span class="badge badge-<%= visita.estado %>"><%= visita.estado %></span></td>
+            <td>
+              <a href="/visitas/<%= visita.id %>" class="btn-small">Ver Detalle</a>
+            </td>
+          </tr>
+        <% }) %>
+
+        <% if (visitas.length === 0) { %>
+          <tr>
+            <td colspan="8" style="text-align: center;">No hay visitas registradas</td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="page-header">
+      <h1>Inventario de Materiales</h1>
+      <div class="actions">
+        <a href="/inventario/nuevo" class="btn btn-primary">+ Nuevo Material</a>
+        <a href="/inventario/categorias" class="btn btn-secondary">Categorías</a>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Categoría</th>
+          <th>Stock Actual</th>
+          <th>Stock Mínimo</th>
+          <th>Unidad</th>
+          <th>Precio Unit.</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% materiales.forEach(material => { %>
+          <tr class="<%= material.stock_actual <= material.stock_minimo ? 'stock-bajo' : '' %>">
+            <td><%= material.codigo || '-' %></td>
+            <td><%= material.nombre %></td>
+            <td><%= material.categoria_nombre || 'Sin categoría' %></td>
+            <td>
+              <%= material.stock_actual %>
+              <% if (material.stock_actual <= material.stock_minimo) { %>
+                <span class="badge badge-warning">Bajo</span>
+              <% } %>
+            </td>
+            <td><%= material.stock_minimo %></td>
+            <td><%= material.unidad_medida || '-' %></td>
+            <td>$<%= parseFloat(material.precio_unitario).toFixed(2) %></td>
+            <td>
+              <a href="/inventario/<%= material.id %>" class="btn-small">Ver Detalle</a>
+            </td>
+          </tr>
+        <% }) %>
+        
+        <% if (materiales.length === 0) { %>
+          <tr>
+            <td colspan="8" style="text-align: center;">No hay materiales registrados</td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

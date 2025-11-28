@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <h1>Detalle de Visita #<%= visita.id %></h1>
+
+    <div class="detail-card">
+      <h3>Información del Visitante</h3>
+      <p><strong>Nombre:</strong> <%= visita.visitante_nombre %></p>
+      <p><strong>Empresa:</strong> <%= visita.visitante_empresa || 'No especificada' %></p>
+      <p><strong>Documento:</strong> <%= visita.visitante_documento || 'No especificado' %></p>
+
+      <h3>Información de la Visita</h3>
+      <p><strong>Persona Visitada:</strong> <%= visita.visitado_nombre %></p>
+      <p><strong>Motivo:</strong> <%= visita.motivo_visita %></p>
+      <p><strong>Fecha y Hora:</strong> <%= new Date(visita.fecha_visita).toLocaleString('es-ES') %></p>
+      <p><strong>Estado:</strong> <span class="badge badge-<%= visita.estado %>"><%= visita.estado %></span></p>
+      <p><strong>Fecha de Registro:</strong> <%= new Date(visita.fecha_registro).toLocaleString('es-ES') %></p>
+      
+      <% if (visita.observaciones) { %>
+        <p><strong>Observaciones:</strong> <%= visita.observaciones %></p>
+      <% } %>
+    </div>
+
+    <% if (user.rol === 'admin' || user.rol === 'superadmin' || visita.usuario_visitado == user.id) { %>
+      <div class="actions-section">
+        <h3>Actualizar Estado</h3>
+        <form action="/visitas/<%= visita.id %>/estado" method="POST" class="form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="estado">Estado</label>
+              <select id="estado" name="estado">
+                <option value="programada" <%= visita.estado === 'programada' ? 'selected' : '' %>>Programada</option>
+                <option value="en_curso" <%= visita.estado === 'en_curso' ? 'selected' : '' %>>En Curso</option>
+                <option value="completada" <%= visita.estado === 'completada' ? 'selected' : '' %>>Completada</option>
+                <option value="cancelada" <%= visita.estado === 'cancelada' ? 'selected' : '' %>>Cancelada</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="observaciones">Observaciones</label>
+            <textarea id="observaciones" name="observaciones" rows="3"><%= visita.observaciones || '' %></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Actualizar</button>
+        </form>
+      </div>
+    <% } %>
+
+    <div class="form-actions">
+      <a href="/visitas" class="btn btn-secondary">Volver a Visitas</a>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>
