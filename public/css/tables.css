@@ -238,6 +238,36 @@ table td[colspan] {
   font-style: italic;
 }
 
+/* Filas de edición en línea */
+tr.edit-row td {
+  background-color: #f8f9fa !important;
+  padding: 20px !important;
+  border-top: 3px solid var(--color-naranja-primary);
+  border-bottom: 3px solid var(--color-naranja-primary);
+}
+
+tr.edit-row h4 {
+  color: var(--color-naranja-dark);
+  margin-bottom: var(--spacing-md);
+}
+
+tr.edit-row .form-row {
+  margin-bottom: var(--spacing-sm);
+}
+
+tr.edit-row .form-group {
+  margin-bottom: 0;
+}
+
+tr.edit-row .form-group label {
+  font-size: var(--font-size-small);
+  margin-bottom: var(--spacing-xs);
+}
+
+tr.edit-row .form-group input {
+  font-size: var(--font-size-small);
+}
+
 /* ============================================
    RESPONSIVE TABLAS
    ============================================ */

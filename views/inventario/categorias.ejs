@@ -24,60 +24,165 @@
     </div>
 
     <div class="categoria-form">
-      <h3>Nueva Categoría</h3>
+      <h3>➕ Nueva Categoría</h3>
       <form action="/inventario/categorias" method="POST">
         <div class="form-row">
           <div class="form-group">
-            <label for="nombre">Nombre</label>
-            <input type="text" id="nombre" name="nombre" required>
+            <label for="nombre">Nombre *</label>
+            <input type="text" id="nombre" name="nombre" required placeholder="Ej: Notebooks, Impresoras">
           </div>
 
           <div class="form-group">
             <label for="descripcion">Descripción</label>
-            <input type="text" id="descripcion" name="descripcion">
+            <input type="text" id="descripcion" name="descripcion" placeholder="Descripción de la categoría">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="codigo_prefijo">Prefijo de Código</label>
+            <input type="text" id="codigo_prefijo" name="codigo_prefijo" placeholder="Ej: NB, IMP, PC" maxlength="10">
+            <small>Se usará para generar códigos automáticos: NB-001, IMP-002, etc.</small>
           </div>
 
-          <button type="submit" class="btn btn-primary">Crear Categoría</button>
+          <div class="form-group">
+            <label for="icono">Icono (emoji o texto)</label>
+            <input type="text" id="icono" name="icono" placeholder="💻 📱 🖨️" maxlength="5">
+          </div>
         </div>
+
+        <button type="submit" class="btn btn-primary">Crear Categoría</button>
       </form>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Descripción</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% categorias.forEach(cat => { %>
+    <div class="table-responsive">
+      <table>
+        <thead>
           <tr>
-            <td><%= cat.id %></td>
-            <td><%= cat.nombre %></td>
-            <td><%= cat.descripcion || 'Sin descripción' %></td>
-            <td>
-              <% if (cat.activo) { %>
-                <span class="badge badge-success">Activa</span>
-              <% } else { %>
-                <span class="badge badge-secondary">Inactiva</span>
-              <% } %>
-            </td>
-            <td>
-              <a href="/inventario/categorias/<%= cat.id %>/atributos" class="btn-small">Ver Atributos</a>
-            </td>
+            <th>Icono</th>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Prefijo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
           </tr>
-        <% }) %>
+        </thead>
+        <tbody>
+          <% categorias.forEach(cat => { %>
+            <tr id="cat-row-<%= cat.id %>">
+              <td style="font-size: 1.5rem;"><%= cat.icono || '📦' %></td>
+              <td><strong><%= cat.nombre %></strong></td>
+              <td><%= cat.descripcion || 'Sin descripción' %></td>
+              <td>
+                <% if (cat.codigo_prefijo) { %>
+                  <span class="badge badge-secondary"><%= cat.codigo_prefijo %></span>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+              <td>
+                <% if (cat.activo) { %>
+                  <span class="badge badge-success">Activa</span>
+                <% } else { %>
+                  <span class="badge badge-secondary">Inactiva</span>
+                <% } %>
+              </td>
+              <td>
+                <button onclick="editarCategoria(<%= cat.id %>, '<%= cat.nombre %>', '<%= cat.descripcion || '' %>', '<%= cat.codigo_prefijo || '' %>', '<%= cat.icono || '' %>')" 
+                        class="btn-small btn-warning">✏️ Editar</button>
+                <a href="/inventario/categorias/<%= cat.id %>/atributos" class="btn-small">📋 Atributos</a>
+                <% if (cat.activo) { %>
+                  <button onclick="toggleCategoria(<%= cat.id %>, false)" class="btn-small btn-danger">🚫 Desactivar</button>
+                <% } else { %>
+                  <button onclick="toggleCategoria(<%= cat.id %>, true)" class="btn-small btn-success">✅ Activar</button>
+                <% } %>
+              </td>
+            </tr>
+            
+            <!-- Fila de edición oculta -->
+            <tr id="edit-row-<%= cat.id %>" style="display: none;" class="edit-row">
+              <td colspan="6" style="background-color: #f8f9fa; padding: 20px;">
+                <form action="/inventario/categorias/<%= cat.id %>/editar" method="POST">
+                  <h4 style="margin-bottom: 15px;">✏️ Editar Categoría</h4>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Nombre *</label>
+                      <input type="text" name="nombre" id="edit-nombre-<%= cat.id %>" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Descripción</label>
+                      <input type="text" name="descripcion" id="edit-descripcion-<%= cat.id %>">
+                    </div>
+                    <div class="form-group">
+                      <label>Prefijo</label>
+                      <input type="text" name="codigo_prefijo" id="edit-prefijo-<%= cat.id %>" maxlength="10">
+                    </div>
+                    <div class="form-group">
+                      <label>Icono</label>
+                      <input type="text" name="icono" id="edit-icono-<%= cat.id %>" maxlength="5">
+                    </div>
+                  </div>
+                  <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">💾 Guardar</button>
+                    <button type="button" onclick="cancelarEdicion(<%= cat.id %>)" class="btn btn-secondary">❌ Cancelar</button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
 
-        <% if (categorias.length === 0) { %>
-          <tr>
-            <td colspan="5" style="text-align: center;">No hay categorías registradas</td>
-          </tr>
-        <% } %>
-      </tbody>
-    </table>
+          <% if (categorias.length === 0) { %>
+            <tr>
+              <td colspan="6" style="text-align: center;">No hay categorías registradas</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      function editarCategoria(id, nombre, descripcion, prefijo, icono) {
+        // Ocultar fila normal y mostrar fila de edición
+        document.getElementById('cat-row-' + id).style.display = 'none';
+        document.getElementById('edit-row-' + id).style.display = 'table-row';
+        
+        // Llenar campos
+        document.getElementById('edit-nombre-' + id).value = nombre;
+        document.getElementById('edit-descripcion-' + id).value = descripcion;
+        document.getElementById('edit-prefijo-' + id).value = prefijo;
+        document.getElementById('edit-icono-' + id).value = icono;
+      }
+
+      function cancelarEdicion(id) {
+        document.getElementById('cat-row-' + id).style.display = 'table-row';
+        document.getElementById('edit-row-' + id).style.display = 'none';
+      }
+
+      async function toggleCategoria(id, activar) {
+        if (!confirm(`¿Estás seguro de ${activar ? 'activar' : 'desactivar'} esta categoría?`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/inventario/categorias/${id}/toggle`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ activo: activar })
+          });
+
+          if (response.ok) {
+            location.reload();
+          } else {
+            alert('Error al actualizar la categoría');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Error al actualizar la categoría');
+        }
+      }
+    </script>
   </main>
 
   <%- include('../partials/footer') %>

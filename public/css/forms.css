@@ -172,6 +172,17 @@ button[type="submit"]:active,
   transform: translateY(-2px);
 }
 
+.btn-warning {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: var(--color-blanco);
+}
+
+.btn-warning:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+  color: var(--color-blanco);
+}
+
 button:disabled,
 .btn:disabled {
   opacity: 0.5;

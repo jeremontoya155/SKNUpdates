@@ -282,13 +282,13 @@ const inventarioController = {
 
   // Crear categoría
   crearCategoria: async (req, res) => {
-    const { nombre, descripcion } = req.body;
+    const { nombre, descripcion, codigo_prefijo, icono } = req.body;
     const user = req.session.user;
 
     try {
       await db.query(
-        'INSERT INTO categorias_materiales (empresa_id, nombre, descripcion) VALUES ($1, $2, $3)',
-        [user.empresa_id, nombre, descripcion]
+        'INSERT INTO categorias_materiales (empresa_id, nombre, descripcion, codigo_prefijo, icono) VALUES ($1, $2, $3, $4, $5)',
+        [user.empresa_id, nombre, descripcion, codigo_prefijo, icono]
       );
 
       req.session.message = 'Categoría creada exitosamente';
@@ -297,6 +297,46 @@ const inventarioController = {
       console.error('Error al crear categoría:', error);
       req.session.error = 'Error al crear categoría';
       res.redirect('/inventario/categorias');
+    }
+  },
+
+  // Editar categoría
+  editarCategoria: async (req, res) => {
+    const { id } = req.params;
+    const { nombre, descripcion, codigo_prefijo, icono } = req.body;
+    const user = req.session.user;
+
+    try {
+      await db.query(
+        'UPDATE categorias_materiales SET nombre = $1, descripcion = $2, codigo_prefijo = $3, icono = $4 WHERE id = $5 AND empresa_id = $6',
+        [nombre, descripcion, codigo_prefijo, icono, id, user.empresa_id]
+      );
+
+      req.session.message = 'Categoría actualizada exitosamente';
+      res.redirect('/inventario/categorias');
+    } catch (error) {
+      console.error('Error al editar categoría:', error);
+      req.session.error = 'Error al editar categoría';
+      res.redirect('/inventario/categorias');
+    }
+  },
+
+  // Toggle activar/desactivar categoría
+  toggleCategoria: async (req, res) => {
+    const { id } = req.params;
+    const { activo } = req.body;
+    const user = req.session.user;
+
+    try {
+      await db.query(
+        'UPDATE categorias_materiales SET activo = $1 WHERE id = $2 AND empresa_id = $3',
+        [activo, id, user.empresa_id]
+      );
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error al toggle categoría:', error);
+      res.status(500).json({ error: 'Error al actualizar categoría' });
     }
   },
 

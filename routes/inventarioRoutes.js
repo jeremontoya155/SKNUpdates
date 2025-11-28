@@ -16,6 +16,8 @@ router.post('/movimiento', canEditInventory, inventarioController.registrarMovim
 // Solo SKN puede gestionar categorías y plantillas - ANTES de /:id
 router.get('/categorias', isSKNUser, inventarioController.categorias);
 router.post('/categorias', isSKNUser, inventarioController.crearCategoria);
+router.post('/categorias/:id/editar', isSKNUser, inventarioController.editarCategoria);
+router.post('/categorias/:id/toggle', isSKNUser, inventarioController.toggleCategoria);
 router.get('/categorias/:id/atributos', isSKNUser, inventarioController.atributosCategoria);
 router.post('/categorias/atributos', isSKNUser, inventarioController.crearAtributo);
 
