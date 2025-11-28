@@ -46,7 +46,7 @@ async function crearUsuarioAdmin() {
     await db.query(
       `INSERT INTO usuarios (nombre, email, password_hash, empresa_id, rol, activo, fecha_aprobacion) 
        VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-      ['Administrador SKN', 'admin@skn.com', passwordHash, empresaId, 'admin', true]
+      ['Administrador SKN', 'admin@skn.com', passwordHash, empresaId, 'skn_admin', true]
     );
 
     console.log('✓ Usuario administrador creado exitosamente');
