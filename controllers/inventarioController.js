@@ -125,15 +125,15 @@ const inventarioController = {
 
   // Crear material
   crear: async (req, res) => {
-    const { nombre, descripcion, codigo, categoria_id, stock_actual, stock_minimo, precio_unitario, unidad_medida } = req.body;
+    const { nombre, descripcion, codigo, marca, modelo, categoria_id, stock_actual, stock_minimo, precio_unitario, unidad_medida } = req.body;
     const user = req.session.user;
 
     try {
-      // Insertar material
+      // Insertar material con marca y modelo
       const materialResult = await db.query(
-        `INSERT INTO materiales (empresa_id, categoria_id, nombre, descripcion, codigo, stock_actual, stock_minimo, precio_unitario, unidad_medida) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-        [user.empresa_id, categoria_id, nombre, descripcion, codigo, stock_actual || 0, stock_minimo || 0, precio_unitario || 0, unidad_medida]
+        `INSERT INTO materiales (empresa_id, categoria_id, nombre, marca, modelo, descripcion, codigo, stock_actual, stock_minimo, precio_unitario, unidad_medida) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+        [user.empresa_id, categoria_id, nombre, marca, modelo, descripcion, codigo, stock_actual || 0, stock_minimo || 0, precio_unitario || 0, unidad_medida || 'unidad']
       );
 
       const materialId = materialResult.rows[0].id;
@@ -153,11 +153,11 @@ const inventarioController = {
         }
       }
 
-      req.session.message = 'Material creado exitosamente';
+      req.session.message = 'Equipo creado exitosamente';
       res.redirect('/inventario');
     } catch (error) {
       console.error('Error al crear material:', error);
-      req.session.error = 'Error al crear material';
+      req.session.error = 'Error al crear equipo';
       res.redirect('/inventario/nuevo');
     }
   },

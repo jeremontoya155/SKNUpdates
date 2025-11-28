@@ -19,26 +19,38 @@
     <form action="/inventario/nuevo" method="POST" class="form">
       <div class="form-row">
         <div class="form-group">
-          <label for="nombre">Nombre *</label>
-          <input type="text" id="nombre" name="nombre" required>
+          <label for="nombre">Nombre del Equipo *</label>
+          <input type="text" id="nombre" name="nombre" required placeholder="ej: Impresora Multifunción Epson L3150">
         </div>
 
         <div class="form-group">
-          <label for="codigo">Código</label>
-          <input type="text" id="codigo" name="codigo">
+          <label for="codigo">Código Interno</label>
+          <input type="text" id="codigo" name="codigo" placeholder="ej: IMP-EPSON-L3150">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="marca">Marca</label>
+          <input type="text" id="marca" name="marca" placeholder="ej: Epson, HP, Dell">
+        </div>
+
+        <div class="form-group">
+          <label for="modelo">Modelo</label>
+          <input type="text" id="modelo" name="modelo" placeholder="ej: L3150, LaserJet Pro M404dn">
         </div>
       </div>
 
       <div class="form-group">
         <label for="descripcion">Descripción</label>
-        <textarea id="descripcion" name="descripcion" rows="3"></textarea>
+        <textarea id="descripcion" name="descripcion" rows="3" placeholder="Descripción detallada del equipo"></textarea>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label for="categoria_id">Categoría</label>
-          <select id="categoria_id" name="categoria_id" onchange="this.form.action='/inventario/nuevo?categoria_id=' + this.value; this.form.method='GET'; this.form.submit();">
-            <option value="">Sin categoría</option>
+          <label for="categoria_id">Categoría *</label>
+          <select id="categoria_id" name="categoria_id" required onchange="this.form.action='/inventario/nuevo?categoria_id=' + this.value; this.form.method='GET'; this.form.submit();">
+            <option value="">Seleccionar categoría</option>
             <% categorias.forEach(cat => { %>
               <option value="<%= cat.id %>" <%= categoriaId == cat.id ? 'selected' : '' %>><%= cat.nombre %></option>
             <% }) %>
@@ -47,13 +59,14 @@
 
         <div class="form-group">
           <label for="unidad_medida">Unidad de Medida</label>
-          <input type="text" id="unidad_medida" name="unidad_medida" placeholder="ej: unidades, kg, litros">
+          <input type="text" id="unidad_medida" name="unidad_medida" placeholder="Por defecto: unidad" value="unidad">
         </div>
       </div>
 
       <% if (atributos && atributos.length > 0) { %>
         <div class="atributos-section">
-          <h3>Características Específicas</h3>
+          <h3>📋 Especificaciones Técnicas</h3>
+          <p class="text-muted">Complete las características técnicas del equipo</p>
           <% atributos.forEach(attr => { %>
             <div class="form-group">
               <label for="atributo_<%= attr.id %>">
@@ -62,7 +75,8 @@
               </label>
               
               <% if (attr.tipo_dato === 'texto') { %>
-                <input type="text" id="atributo_<%= attr.id %>" name="atributo_<%= attr.id %>" <%= attr.requerido ? 'required' : '' %>>
+                <input type="text" id="atributo_<%= attr.id %>" name="atributo_<%= attr.id %>" <%= attr.requerido ? 'required' : '' %> 
+                       placeholder="<%= attr.nombre === 'Procesador' ? 'ej: Intel Core i5-1135G7' : attr.nombre === 'RAM' ? 'ej: 8GB DDR4' : attr.nombre === 'Almacenamiento' ? 'ej: 256GB SSD' : '' %>">
               <% } else if (attr.tipo_dato === 'numero') { %>
                 <input type="number" id="atributo_<%= attr.id %>" name="atributo_<%= attr.id %>" step="any" <%= attr.requerido ? 'required' : '' %>>
               <% } else if (attr.tipo_dato === 'fecha') { %>
