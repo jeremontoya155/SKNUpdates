@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>✏️ Editar Contador</h1>
+      <a href="/contadores/<%= contador.id %>" class="btn btn-secondary">⬅️ Volver</a>
+    </div>
+
+    <div class="alert alert-warning">
+      ⚠️ Solo usuarios SKN pueden editar contadores
+    </div>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="detail-card" style="margin-bottom: 2rem;">
+      <div class="detail-header">
+        <h3>Información de la Impresora</h3>
+      </div>
+      <div class="detail-content">
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>🏢 Empresa</label>
+            <p><strong><%= contador.empresa_nombre %></strong></p>
+          </div>
+          <div class="detail-item">
+            <label>🖨️ Impresora</label>
+            <p><%= contador.impresora_nombre %> (<%= contador.marca %> <%= contador.modelo %>)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <form action="/contadores/editar/<%= contador.id %>" method="POST">
+      <div class="form-group">
+        <label for="fecha_lectura">Fecha de Lectura *</label>
+        <input 
+          type="date" 
+          id="fecha_lectura" 
+          name="fecha_lectura" 
+          value="<%= new Date(contador.fecha_lectura).toISOString().split('T')[0] %>"
+          required
+        >
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="contador_byn">Contador Blanco y Negro</label>
+          <input 
+            type="number" 
+            id="contador_byn" 
+            name="contador_byn" 
+            min="0"
+            value="<%= contador.contador_byn %>"
+            placeholder="0"
+          >
+          <small>📄 Páginas impresas en B&N</small>
+        </div>
+
+        <div class="form-group">
+          <label for="contador_color">Contador Color</label>
+          <input 
+            type="number" 
+            id="contador_color" 
+            name="contador_color" 
+            min="0"
+            value="<%= contador.contador_color %>"
+            placeholder="0"
+          >
+          <small>🎨 Páginas impresas a color</small>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Total de Páginas</label>
+        <div class="readonly-field" id="total_display"><%= contador.total_paginas.toLocaleString() %></div>
+        <small>🔢 Calculado automáticamente (B&N + Color)</small>
+      </div>
+
+      <div class="form-group">
+        <label for="observaciones">Observaciones</label>
+        <textarea 
+          id="observaciones" 
+          name="observaciones" 
+          rows="3"
+          placeholder="Notas adicionales sobre esta lectura..."
+        ><%= contador.observaciones || '' %></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+        <a href="/contadores/<%= contador.id %>" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </main>
+
+  <%- include('../partials/footer') %>
+
+  <script>
+    // Calcular total automáticamente
+    const bynInput = document.getElementById('contador_byn');
+    const colorInput = document.getElementById('contador_color');
+    const totalDisplay = document.getElementById('total_display');
+
+    function calcularTotal() {
+      const byn = parseInt(bynInput.value) || 0;
+      const color = parseInt(colorInput.value) || 0;
+      const total = byn + color;
+      totalDisplay.textContent = total.toLocaleString();
+    }
+
+    bynInput.addEventListener('input', calcularTotal);
+    colorInput.addEventListener('input', calcularTotal);
+  </script>
+</body>
+</html>

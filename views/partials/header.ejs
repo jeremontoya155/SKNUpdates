@@ -19,10 +19,17 @@
           <li><a href="/inventario">Inventario</a></li>
         <% } %>
         
+        <% if (user.rol === 'skn_admin' || user.rol === 'skn_user' || user.rol === 'empresa_admin') { %>
+          <li><a href="/servidores">Servidores</a></li>
+        <% } %>
+        
+        <li><a href="/contadores">Contadores</a></li>
+        
         <li><a href="/tickets">Tickets</a></li>
         
         <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
           <li><a href="/visitas">Visitas</a></li>
+          <li><a href="/empresas">Empresas</a></li>
         <% } %>
         
         <% if (user.rol === 'skn_admin' || user.rol === 'empresa_admin') { %>

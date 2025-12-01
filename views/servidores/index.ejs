@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="page-header">
+      <h1>🖥️ Servidores e Infraestructura</h1>
+      <div class="actions">
+        <% if (user.rol === 'skn_admin' || user.rol === 'empresa_admin') { %>
+          <a href="/servidores/nuevo" class="btn btn-primary">➕ Nuevo Servidor</a>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Nombre</th>
+            <th>IP Externa</th>
+            <th>IP Interna</th>
+            <th>Usuario</th>
+            <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
+              <th>Empresa</th>
+            <% } %>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (servidores.length === 0) { %>
+            <tr>
+              <td colspan="<%= (user.rol === 'skn_admin' || user.rol === 'skn_user') ? '7' : '6' %>" style="text-align: center;">
+                No hay servidores registrados
+              </td>
+            </tr>
+          <% } else { %>
+            <% servidores.forEach(srv => { %>
+              <tr>
+                <td>
+                  <span class="badge badge-secondary"><%= srv.tipo || 'N/A' %></span>
+                </td>
+                <td><strong><%= srv.nombre %></strong></td>
+                <td><%= srv.ip_externa || '-' %></td>
+                <td><%= srv.ip_interna || '-' %></td>
+                <td><%= srv.usuario || '-' %></td>
+                <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
+                  <td><%= srv.empresa_nombre || '-' %></td>
+                <% } %>
+                <td>
+                  <a href="/servidores/<%= srv.id %>" class="btn-small">👁️ Ver</a>
+                </td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

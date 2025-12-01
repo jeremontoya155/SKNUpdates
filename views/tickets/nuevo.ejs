@@ -10,35 +10,61 @@
   <%- include('../partials/header') %>
 
   <main class="container">
-    <h1>Nuevo Ticket</h1>
+    <div class="page-header">
+      <h1>🎫 Nuevo Ticket</h1>
+      <a href="/tickets" class="btn btn-secondary">⬅️ Volver</a>
+    </div>
+
+    <% if (!esSKN) { %>
+      <div class="alert alert-info">
+        ℹ️ El ticket será asignado a tu empresa automáticamente. SKN se encargará de resolverlo.
+      </div>
+    <% } %>
 
     <% if (error) { %>
       <div class="alert alert-error"><%= error %></div>
     <% } %>
 
     <form action="/tickets/nuevo" method="POST" class="form">
+      <% if (esSKN) { %>
+        <div class="form-group">
+          <label for="empresa_id">Empresa *</label>
+          <select id="empresa_id" name="empresa_id" required>
+            <option value="">Seleccionar empresa</option>
+            <% empresas.forEach(emp => { %>
+              <option value="<%= emp.id %>"><%= emp.nombre %></option>
+            <% }) %>
+          </select>
+          <small>💡 Como usuario SKN, puedes crear tickets para cualquier empresa</small>
+        </div>
+      <% } else { %>
+        <div class="alert alert-warning">
+          🏢 Empresa: <strong><%= user.empresa_nombre %></strong>
+        </div>
+      <% } %>
+
       <div class="form-group">
         <label for="titulo">Título *</label>
-        <input type="text" id="titulo" name="titulo" required>
+        <input type="text" id="titulo" name="titulo" required placeholder="Resumen breve del problema">
       </div>
 
       <div class="form-group">
         <label for="descripcion">Descripción *</label>
-        <textarea id="descripcion" name="descripcion" rows="5" required></textarea>
+        <textarea id="descripcion" name="descripcion" rows="5" required placeholder="Describe el problema o solicitud en detalle"></textarea>
       </div>
 
       <div class="form-group">
         <label for="prioridad">Prioridad</label>
         <select id="prioridad" name="prioridad">
-          <option value="baja">Baja</option>
-          <option value="media" selected>Media</option>
-          <option value="alta">Alta</option>
-          <option value="urgente">Urgente</option>
+          <option value="baja">🟢 Baja</option>
+          <option value="media" selected>🟡 Media</option>
+          <option value="alta">🟠 Alta</option>
+          <option value="urgente">🔴 Urgente</option>
         </select>
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Crear Ticket</button>
+        <button type="submit" class="btn btn-primary">💾 Crear Ticket</button>
         <a href="/tickets" class="btn btn-secondary">Cancelar</a>
       </div>
     </form>

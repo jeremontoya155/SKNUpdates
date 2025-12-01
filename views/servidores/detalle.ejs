@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>🖧 <%= servidor.nombre %></h1>
+      <a href="/servidores" class="btn btn-secondary">⬅️ Volver al listado</a>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-header">
+        <h2>Información General</h2>
+        <% if (servidor.tipo) { %>
+          <span class="badge badge-primary"><%= servidor.tipo %></span>
+        <% } %>
+        <span class="badge <%= servidor.activo ? 'badge-success' : 'badge-danger' %>">
+          <%= servidor.activo ? '✅ Activo' : '❌ Inactivo' %>
+        </span>
+      </div>
+
+      <div class="detail-content">
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>🏢 Empresa</label>
+            <p><%= servidor.empresa_nombre %></p>
+          </div>
+          <div class="detail-item">
+            <label>📝 Nombre del Servidor</label>
+            <p><strong><%= servidor.nombre %></strong></p>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>🌐 IP Externa</label>
+            <p>
+              <% if (servidor.ip_externa) { %>
+                <code><%= servidor.ip_externa %></code>
+                <button class="btn-copy" onclick="copyToClipboard('<%= servidor.ip_externa %>')">📋</button>
+              <% } else { %>
+                <em>No especificada</em>
+              <% } %>
+            </p>
+          </div>
+          <div class="detail-item">
+            <label>🔌 Puerto</label>
+            <p>
+              <% if (servidor.puerto) { %>
+                <code><%= servidor.puerto %></code>
+                <button class="btn-copy" onclick="copyToClipboard('<%= servidor.puerto %>')">📋</button>
+              <% } else { %>
+                <em>No especificado</em>
+              <% } %>
+            </p>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>🏠 IP Interna</label>
+            <p>
+              <code><%= servidor.ip_interna %></code>
+              <button class="btn-copy" onclick="copyToClipboard('<%= servidor.ip_interna %>')">📋</button>
+            </p>
+          </div>
+          <div class="detail-item">
+            <label>👤 Usuario</label>
+            <p>
+              <% if (servidor.usuario) { %>
+                <code><%= servidor.usuario %></code>
+                <button class="btn-copy" onclick="copyToClipboard('<%= servidor.usuario %>')">📋</button>
+              <% } else { %>
+                <em>No especificado</em>
+              <% } %>
+            </p>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-item full-width">
+            <label>🔑 Contraseña</label>
+            <p>
+              <% if (servidor.password) { %>
+                <code id="password-field">********</code>
+                <button class="btn-toggle" onclick="togglePassword()">👁️ Mostrar</button>
+                <button class="btn-copy" onclick="copyToClipboard('<%= servidor.password %>')">📋 Copiar</button>
+                <input type="hidden" id="password-value" value="<%= servidor.password %>">
+              <% } else { %>
+                <em>No especificada</em>
+              <% } %>
+            </p>
+          </div>
+        </div>
+
+        <% if (servidor.observaciones) { %>
+          <div class="detail-row">
+            <div class="detail-item full-width">
+              <label>📋 Observaciones</label>
+              <p><%= servidor.observaciones %></p>
+            </div>
+          </div>
+        <% } %>
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>📅 Fecha de Creación</label>
+            <p><%= new Date(servidor.fecha_creacion).toLocaleString('es-AR') %></p>
+          </div>
+          <div class="detail-item">
+            <label>🔄 Última Actualización</label>
+            <p><%= new Date(servidor.fecha_actualizacion).toLocaleString('es-AR') %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <% if (user.rol === 'skn_admin' || user.rol === 'empresa_admin') { %>
+      <div class="form-actions">
+        <a href="/servidores/editar/<%= servidor.id %>" class="btn btn-warning">✏️ Editar</a>
+        <button onclick="confirmarEliminar()" class="btn btn-danger">🗑️ Eliminar</button>
+      </div>
+    <% } %>
+  </main>
+
+  <%- include('../partials/footer') %>
+
+  <script>
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('✅ Copiado al portapapeles');
+      }).catch(err => {
+        console.error('Error al copiar:', err);
+      });
+    }
+
+    function togglePassword() {
+      const field = document.getElementById('password-field');
+      const value = document.getElementById('password-value').value;
+      const btn = event.target;
+      
+      if (field.textContent === '********') {
+        field.textContent = value;
+        btn.textContent = '🙈 Ocultar';
+      } else {
+        field.textContent = '********';
+        btn.textContent = '👁️ Mostrar';
+      }
+    }
+
+    function confirmarEliminar() {
+      if (confirm('⚠️ ¿Está seguro de eliminar este servidor?\nEsta acción no se puede deshacer.')) {
+        // TODO: Implementar endpoint de eliminación
+        alert('🚧 Funcionalidad de eliminación pendiente');
+      }
+    }
+  </script>

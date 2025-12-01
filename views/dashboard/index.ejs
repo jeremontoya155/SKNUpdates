@@ -5,11 +5,242 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %> - Sistema de Inventario</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* Estilos específicos para dashboard mejorado */
+    .dashboard-hero {
+      background: linear-gradient(135deg, var(--color-naranja-dark) 0%, var(--color-naranja-primary) 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      margin-bottom: 2rem;
+      box-shadow: var(--box-shadow-hover);
+    }
+    
+    .dashboard-hero h1 {
+      margin: 0 0 0.5rem 0;
+      font-size: 2rem;
+    }
+    
+    .dashboard-hero p {
+      margin: 0;
+      opacity: 0.95;
+      font-size: 1.1rem;
+    }
+    
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .metric-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      box-shadow: var(--box-shadow);
+      border-left: 4px solid var(--color-naranja-primary);
+      transition: all 0.3s ease;
+    }
+    
+    .metric-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--box-shadow-hover);
+    }
+    
+    .metric-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    
+    .metric-icon {
+      font-size: 2.5rem;
+      opacity: 0.9;
+    }
+    
+    .metric-value {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: var(--color-naranja-primary);
+      margin: 0;
+    }
+    
+    .metric-label {
+      color: var(--color-gris-oscuro);
+      font-size: 0.95rem;
+      margin: 0.5rem 0 0 0;
+    }
+    
+    .metric-sublabel {
+      color: var(--color-gris);
+      font-size: 0.85rem;
+      margin: 0.25rem 0 0 0;
+    }
+    
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background-color: var(--color-gris-claro);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 1rem;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-naranja-dark) 0%, var(--color-naranja-primary) 100%);
+      transition: width 1s ease;
+    }
+    
+    .alert-success-custom {
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      border-left: 4px solid #28a745;
+      padding: 1.5rem;
+      border-radius: var(--border-radius);
+      margin-bottom: 2rem;
+      box-shadow: var(--box-shadow);
+    }
+    
+    .alert-success-custom h3 {
+      color: #155724;
+      margin: 0 0 1rem 0;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .critical-tickets-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .critical-ticket-item {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      border-left: 3px solid #28a745;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+    
+    .critical-ticket-item:hover {
+      transform: translateX(5px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .critical-ticket-info h4 {
+      margin: 0 0 0.25rem 0;
+      color: var(--color-negro);
+      font-size: 1rem;
+    }
+    
+    .critical-ticket-info p {
+      margin: 0;
+      color: var(--color-gris-oscuro);
+      font-size: 0.85rem;
+    }
+    
+    .critical-ticket-badge {
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    
+    .badge-urgente {
+      background-color: #dc3545;
+      color: white;
+    }
+    
+    .badge-alta {
+      background-color: #007bff;
+      color: white;
+    }
+    
+    .timeline-section {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      box-shadow: var(--box-shadow);
+      margin-bottom: 2rem;
+    }
+    
+    .timeline-section h3 {
+      margin: 0 0 1.5rem 0;
+      color: var(--color-negro);
+      font-size: 1.5rem;
+    }
+    
+    .timeline-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .timeline-stat {
+      text-align: center;
+      padding: 1rem;
+      background: var(--color-gris-claro);
+      border-radius: 8px;
+    }
+    
+    .timeline-stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--color-naranja-primary);
+      margin: 0;
+    }
+    
+    .timeline-stat-label {
+      color: var(--color-gris-oscuro);
+      font-size: 0.9rem;
+      margin: 0.5rem 0 0 0;
+    }
+    
+    .empty-state-positive {
+      text-align: center;
+      padding: 2rem;
+      color: var(--color-gris-oscuro);
+    }
+    
+    .empty-state-positive .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+      .dashboard-hero h1 {
+        font-size: 1.5rem;
+      }
+      
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .metric-value {
+        font-size: 2rem;
+      }
+      
+      .critical-ticket-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+    }
+  </style>
 </head>
 <body>
   <%- include('../partials/header') %>
 
-  <main class="dashboard-container">
+  <main class="container">
     <% if (message) { %>
       <div class="alert alert-success"><%= message %></div>
     <% } %>
@@ -18,12 +249,15 @@
       <div class="alert alert-error"><%= error %></div>
     <% } %>
 
-    <div class="page-header">
-      <h1>Dashboard</h1>
-    </div>
+    
+    <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
+      <!-- Dashboard SKN MEJORADO -->
+      <div class="dashboard-hero">
+        <h1>👨‍💼 Panel de Administración SKN</h1>
+        <p>Vista completa de todas las empresas, contactos y actividad del sistema</p>
+      </div>
 
-    <div class="stats-grid">
-      <% if (user.rol === 'superadmin') { %>
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
         <div class="stat-card stat-blue">
           <div class="stat-icon">🏢</div>
           <div class="stat-content">
@@ -42,64 +276,514 @@
           <div class="stat-icon">🎫</div>
           <div class="stat-content">
             <h3>Tickets Abiertos</h3>
-            <p class="stat-number"><%= stats.tickets || 0 %></p>
+            <p class="stat-number"><%= stats.ticketsAbiertos || 0 %></p>
           </div>
         </div>
-      <% } else { %>
-        <div class="stat-card stat-blue">
+        <div class="stat-card stat-primary">
           <div class="stat-icon">📦</div>
           <div class="stat-content">
             <h3>Materiales</h3>
             <p class="stat-number"><%= stats.materiales || 0 %></p>
           </div>
         </div>
-        <div class="stat-card stat-red">
-          <div class="stat-icon">⚠️</div>
-          <div class="stat-content">
-            <h3>Stock Bajo</h3>
-            <p class="stat-number"><%= stats.materialesBajos || 0 %></p>
-          </div>
+      </div>
+
+      <!-- Directorio de Empresas con Contactos -->
+      <div class="timeline-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h3 style="margin: 0;">📋 Directorio de Empresas</h3>
+          <button onclick="exportarContactosEmpresas()" class="btn btn-primary" style="font-size: 0.9rem;">
+            📥 Exportar Contactos
+          </button>
         </div>
-        <div class="stat-card stat-orange">
-          <div class="stat-icon">🎫</div>
-          <div class="stat-content">
-            <h3>Tickets Abiertos</h3>
-            <p class="stat-number"><%= stats.tickets || 0 %></p>
+        
+        <% if (stats.empresasConContactos && stats.empresasConContactos.length > 0) { %>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: var(--color-gris-claro); text-align: left;">
+                  <th style="padding: 1rem; border-bottom: 2px solid var(--color-naranja-primary);">Empresa</th>
+                  <th style="padding: 1rem; border-bottom: 2px solid var(--color-naranja-primary);">📧 Email</th>
+                  <th style="padding: 1rem; border-bottom: 2px solid var(--color-naranja-primary);">📞 Teléfono</th>
+                  <th style="padding: 1rem; border-bottom: 2px solid var(--color-naranja-primary);">👥 Usuarios</th>
+                  <th style="padding: 1rem; border-bottom: 2px solid var(--color-naranja-primary);">📦 Equipos</th>
+                  <th style="padding: 1rem; border-bottom: 2px solid var(--color-naranja-primary);">🎫 Tickets</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% stats.empresasConContactos.forEach(empresa => { %>
+                  <tr style="border-bottom: 1px solid var(--color-gris-claro);">
+                    <td style="padding: 1rem; font-weight: 600;">
+                      <a href="/empresas/<%= empresa.id %>" style="color: var(--color-naranja-primary); text-decoration: none;">
+                        <%= empresa.nombre %>
+                      </a>
+                    </td>
+                    <td style="padding: 1rem;">
+                      <a href="mailto:<%= empresa.email %>" style="color: #007bff; text-decoration: none;">
+                        <%= empresa.email %>
+                      </a>
+                    </td>
+                    <td style="padding: 1rem;">
+                      <a href="tel:<%= empresa.telefono %>" style="color: #28a745; text-decoration: none;">
+                        <%= empresa.telefono %>
+                      </a>
+                    </td>
+                    <td style="padding: 1rem; text-align: center;">
+                      <span class="badge badge-primary"><%= empresa.total_usuarios %></span>
+                    </td>
+                    <td style="padding: 1rem; text-align: center;">
+                      <span class="badge"><%= empresa.total_materiales %></span>
+                    </td>
+                    <td style="padding: 1rem; text-align: center;">
+                      <% if (empresa.tickets_activos > 0) { %>
+                        <span class="badge badge-warning"><%= empresa.tickets_activos %> activos</span>
+                      <% } else { %>
+                        <span class="badge badge-success">✓ Al día</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
           </div>
+        <% } %>
+      </div>
+
+      <!-- Directorio de Usuarios -->
+      <div class="timeline-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h3 style="margin: 0;">👥 Directorio de Usuarios</h3>
+          <button onclick="exportarContactosUsuarios()" class="btn btn-secondary" style="font-size: 0.9rem;">
+            📥 Exportar Usuarios
+          </button>
         </div>
-        <div class="stat-card stat-green">
-          <div class="stat-icon">📅</div>
-          <div class="stat-content">
-            <h3>Visitas Programadas</h3>
-            <p class="stat-number"><%= stats.visitas || 0 %></p>
+        
+        <% if (stats.usuariosConContactos && stats.usuariosConContactos.length > 0) { %>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: var(--color-gris-claro); text-align: left;">
+                  <th style="padding: 1rem; border-bottom: 2px solid var(--color-naranja-primary);">Nombre</th>
+                  <th style="padding: 1rem; border-bottom: 2px solid var(--color-naranja-primary);">📧 Email</th>
+                  <th style="padding: 1rem; border-bottom: 2px solid var(--color-naranja-primary);">🏢 Empresa</th>
+                  <th style="padding: 1rem; border-bottom: 2px solid var(--color-naranja-primary);">📞 Teléfono</th>
+                  <th style="padding: 1rem; border-bottom: 2px solid var(--color-naranja-primary);">Rol</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% stats.usuariosConContactos.forEach(usuario => { %>
+                  <tr style="border-bottom: 1px solid var(--color-gris-claro);">
+                    <td style="padding: 1rem; font-weight: 600;"><%= usuario.nombre %></td>
+                    <td style="padding: 1rem;">
+                      <a href="mailto:<%= usuario.email %>" style="color: #007bff; text-decoration: none;">
+                        <%= usuario.email %>
+                      </a>
+                    </td>
+                    <td style="padding: 1rem;"><%= usuario.empresa_nombre || 'SKN' %></td>
+                    <td style="padding: 1rem;">
+                      <% if (usuario.empresa_telefono) { %>
+                        <a href="tel:<%= usuario.empresa_telefono %>" style="color: #28a745; text-decoration: none;">
+                          <%= usuario.empresa_telefono %>
+                        </a>
+                      <% } else { %>
+                        <span style="color: var(--color-gris);">-</span>
+                      <% } %>
+                    </td>
+                    <td style="padding: 1rem;">
+                      <span class="badge <%= usuario.rol.includes('skn') ? 'badge-danger' : 'badge-primary' %>">
+                        <%= usuario.rol %>
+                      </span>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Distribución de Tickets por Empresa -->
+      <% if (stats.ticketsPorEmpresa && stats.ticketsPorEmpresa.length > 0) { %>
+        <div class="timeline-section">
+          <h3>📊 Tickets por Empresa</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            <% stats.ticketsPorEmpresa.forEach(empresa => { %>
+              <div style="background: var(--color-gris-claro); padding: 1rem; border-radius: 8px;">
+                <h4 style="margin: 0 0 0.5rem 0; color: var(--color-negro);"><%= empresa.empresa %></h4>
+                <div style="display: flex; gap: 1rem; justify-content: space-around;">
+                  <div style="text-align: center;">
+                    <p style="font-size: 1.5rem; font-weight: bold; color: #ffc107; margin: 0;">
+                      <%= empresa.activos %>
+                    </p>
+                    <p style="font-size: 0.85rem; color: var(--color-gris-oscuro); margin: 0;">Activos</p>
+                  </div>
+                  <div style="text-align: center;">
+                    <p style="font-size: 1.5rem; font-weight: bold; color: #28a745; margin: 0;">
+                      <%= empresa.cerrados %>
+                    </p>
+                    <p style="font-size: 0.85rem; color: var(--color-gris-oscuro); margin: 0;">Cerrados</p>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
           </div>
         </div>
       <% } %>
-    </div>
+    <% } else { %>
+      <!-- Dashboard Mejorado para Empresas -->
+      
+      <!-- Hero Section -->
+      <div class="dashboard-hero">
+        <h1>👋 ¡Bienvenido, <%= user.nombre %>!</h1>
+        <p>Aquí tienes un resumen de tu cuenta y el trabajo realizado por nuestro equipo</p>
+      </div>
 
+      <!-- Alertas de Tickets Críticos Resueltos -->
+      <% if (stats.ticketsCriticosResueltos && stats.ticketsCriticosResueltos.length > 0) { %>
+        <div class="alert-success-custom">
+          <h3>
+            <span style="font-size: 2rem;">🎉</span>
+            ¡Excelente! Hemos resuelto <%= stats.ticketsCriticosResueltos.length %> 
+            <%= stats.ticketsCriticosResueltos.length === 1 ? 'problema crítico' : 'problemas críticos' %> 
+            en los últimos 7 días
+          </h3>
+          <div class="critical-tickets-list">
+            <% stats.ticketsCriticosResueltos.forEach(ticket => { 
+              const horasResolucion = Math.round(ticket.horas_resolucion);
+              const tiempoTexto = horasResolucion < 24 
+                ? `${horasResolucion} horas` 
+                : `${Math.round(horasResolucion / 24)} días`;
+            %>
+              <div class="critical-ticket-item">
+                <div class="critical-ticket-info">
+                  <h4>✅ <%= ticket.titulo %></h4>
+                  <p>Resuelto en <%= tiempoTexto %> • <%= new Date(ticket.fecha_cierre).toLocaleDateString('es-AR') %></p>
+                </div>
+                <span class="critical-ticket-badge badge-<%= ticket.prioridad %>">
+                  <%= ticket.prioridad === 'urgente' ? '🔴 URGENTE' : '🟠 ALTA' %>
+                </span>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Métricas Principales -->
+      <div class="metrics-grid">
+        <!-- Tickets Resueltos -->
+        <div class="metric-card" style="border-left-color: #28a745;">
+          <div class="metric-header">
+            <span class="metric-icon">✅</span>
+            <p class="metric-value"><%= stats.ticketsResueltos || 0 %></p>
+          </div>
+          <p class="metric-label">Tickets Resueltos (Total)</p>
+          <p class="metric-sublabel">
+            <%= stats.ticketsResueltosRecientes || 0 %> resueltos en los últimos 30 días
+          </p>
+          <% if (stats.ticketsTotales > 0) { %>
+            <div class="progress-bar-container">
+              <div class="progress-bar" style="width: <%= stats.porcentajeResolucion %>%; background: linear-gradient(90deg, #28a745 0%, #20c997 100%);"></div>
+            </div>
+            <p class="metric-sublabel" style="margin-top: 0.5rem; text-align: right;">
+              <%= stats.porcentajeResolucion %>% de resolución
+            </p>
+          <% } %>
+        </div>
+
+        <!-- Tickets en Curso -->
+        <div class="metric-card" style="border-left-color: #ffc107;">
+          <div class="metric-header">
+            <span class="metric-icon">🔄</span>
+            <p class="metric-value"><%= stats.ticketsEnCurso || 0 %></p>
+          </div>
+          <p class="metric-label">Tickets en Curso</p>
+          <p class="metric-sublabel">
+            <%= stats.ticketsEnCurso === 0 ? '¡Todo al día!' : 'Nuestro equipo está trabajando en ellos' %>
+          </p>
+        </div>
+
+        <!-- Tiempo de Resolución -->
+        <div class="metric-card" style="border-left-color: #007bff;">
+          <div class="metric-header">
+            <span class="metric-icon">⚡</span>
+            <p class="metric-value">
+              <%= stats.tiempoPromedioResolucion > 0 
+                ? (stats.tiempoPromedioResolucion < 24 
+                  ? Math.round(stats.tiempoPromedioResolucion) + 'h'
+                  : Math.round(stats.tiempoPromedioResolucion / 24) + 'd')
+                : '-' %>
+            </p>
+          </div>
+          <p class="metric-label">Tiempo Promedio de Resolución</p>
+          <p class="metric-sublabel">
+            <%= stats.tiempoPromedioResolucion > 0 
+              ? 'Últimos 30 días'
+              : 'Sin datos suficientes' %>
+          </p>
+        </div>
+
+        <!-- Materiales -->
+        <div class="metric-card" style="border-left-color: #E85D04;">
+          <div class="metric-header">
+            <span class="metric-icon">📦</span>
+            <p class="metric-value"><%= stats.materiales || 0 %></p>
+          </div>
+          <p class="metric-label">Equipos en Inventario</p>
+          <% if (stats.materialesBajos > 0) { %>
+            <p class="metric-sublabel" style="color: #dc3545; font-weight: 600;">
+              ⚠️ <%= stats.materialesBajos %> <%= stats.materialesBajos === 1 ? 'equipo' : 'equipos' %> con stock bajo
+            </p>
+          <% } else { %>
+            <p class="metric-sublabel">Todos los equipos en stock óptimo</p>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Timeline de Tickets -->
+      <div class="timeline-section">
+        <h3>📊 Resumen de Actividad (Últimos 30 días)</h3>
+        
+        <div class="timeline-summary">
+          <div class="timeline-stat">
+            <p class="timeline-stat-value"><%= stats.ticketsResueltosRecientes || 0 %></p>
+            <p class="timeline-stat-label">Tickets Resueltos</p>
+          </div>
+          <div class="timeline-stat">
+            <p class="timeline-stat-value"><%= stats.ticketsEnCurso || 0 %></p>
+            <p class="timeline-stat-label">Tickets Activos</p>
+          </div>
+          <div class="timeline-stat">
+            <p class="timeline-stat-value">
+              <%= stats.tiempoPromedioResolucion > 0 
+                ? (stats.tiempoPromedioResolucion < 24 
+                  ? Math.round(stats.tiempoPromedioResolucion) + ' horas'
+                  : Math.round(stats.tiempoPromedioResolucion / 24) + ' días')
+                : 'N/A' %>
+            </p>
+            <p class="timeline-stat-label">Tiempo Promedio</p>
+          </div>
+        </div>
+
+        <% if (stats.ticketsResueltosRecientes === 0 && stats.ticketsEnCurso === 0) { %>
+          <div class="empty-state-positive">
+            <div class="icon">✨</div>
+            <h3>Todo tranquilo por aquí</h3>
+            <p>No hay tickets activos ni problemas recientes. ¡Excelente!</p>
+          </div>
+        <% } else { %>
+          <p style="color: var(--color-gris-oscuro); margin-top: 1rem; text-align: center;">
+            <% if (stats.ticketsResueltosRecientes > 0) { %>
+              En el último mes, nuestro equipo resolvió <strong><%= stats.ticketsResueltosRecientes %></strong> 
+              <%= stats.ticketsResueltosRecientes === 1 ? 'problema' : 'problemas' %> para tu empresa.
+            <% } %>
+            <% if (stats.ticketsEnCurso > 0) { %>
+              Actualmente estamos trabajando en <strong><%= stats.ticketsEnCurso %></strong> 
+              <%= stats.ticketsEnCurso === 1 ? 'solicitud' : 'solicitudes' %>.
+            <% } %>
+          </p>
+        <% } %>
+      </div>
+
+      <!-- Inventario por Categoría -->
+      <% if (stats.materialesPorCategoria && stats.materialesPorCategoria.length > 0) { %>
+        <div class="timeline-section">
+          <h3>📦 Tu Inventario por Categoría</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            <% stats.materialesPorCategoria.forEach(cat => { %>
+              <div class="metric-card" style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;"><%= cat.icono %></div>
+                <h4 style="margin: 0 0 0.5rem 0; color: var(--color-negro); font-size: 1rem;">
+                  <%= cat.categoria %>
+                </h4>
+                <p style="font-size: 2rem; font-weight: bold; color: var(--color-naranja-primary); margin: 0;">
+                  <%= cat.total %>
+                </p>
+                <p style="font-size: 0.85rem; color: var(--color-gris-oscuro); margin: 0.5rem 0 0 0;">
+                  <%= cat.total === 1 ? 'equipo' : 'equipos' %>
+                </p>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Nuestros Mejores Tiempos de Resolución -->
+      <% if (stats.ticketsMasRapidos && stats.ticketsMasRapidos.length > 0) { %>
+        <div class="alert-success-custom">
+          <h3>
+            <span style="font-size: 2rem;">⚡</span>
+            Nuestros Mejores Tiempos de Resolución
+          </h3>
+          <p style="margin: 0 0 1rem 0; color: #155724;">
+            Estos son algunos de los problemas que resolvimos más rápido para tu empresa:
+          </p>
+          <div class="critical-tickets-list">
+            <% stats.ticketsMasRapidos.forEach((ticket, index) => { 
+              const horas = Math.round(ticket.horas_resolucion);
+              const tiempoTexto = horas < 1 
+                ? '< 1 hora' 
+                : horas < 24 
+                  ? `${horas} horas`
+                  : `${Math.round(horas / 24)} días`;
+            %>
+              <div class="critical-ticket-item" style="border-left-color: #28a745;">
+                <div class="critical-ticket-info">
+                  <h4><%= index + 1 %>. <%= ticket.titulo %></h4>
+                  <p>⚡ Resuelto en <strong><%= tiempoTexto %></strong> • <%= new Date(ticket.fecha_cierre).toLocaleDateString('es-AR') %></p>
+                </div>
+                <span style="font-size: 2rem;">🏆</span>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Últimas Visitas -->
+      <% if (stats.ultimasVisitas && stats.ultimasVisitas.length > 0) { %>
+        <div class="timeline-section">
+          <h3>📅 Últimas Visitas Registradas</h3>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+            <% stats.ultimasVisitas.forEach(visita => { %>
+              <div style="background: var(--color-gris-claro); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--color-naranja-primary);">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                  <div>
+                    <h4 style="margin: 0 0 0.25rem 0; color: var(--color-negro);">
+                      <%= visita.visitante_nombre %> - <%= visita.visitante_empresa %>
+                    </h4>
+                    <p style="margin: 0; color: var(--color-gris-oscuro); font-size: 0.9rem;">
+                      <%= visita.motivo_visita %>
+                    </p>
+                  </div>
+                  <div style="text-align: right;">
+                    <p style="margin: 0; font-size: 0.85rem; color: var(--color-gris-oscuro);">
+                      <%= new Date(visita.fecha_visita).toLocaleDateString('es-AR') %>
+                    </p>
+                    <span class="badge <%= visita.estado === 'realizada' ? 'badge-success' : 'badge-warning' %>" style="margin-top: 0.25rem;">
+                      <%= visita.estado %>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+
+    <% } %>
+
+    <!-- Acciones Rápidas -->
     <div class="quick-actions">
       <h2>Acciones Rápidas</h2>
       <div class="actions-grid">
-        <a href="/inventario/nuevo" class="action-card action-primary">
-          <span class="action-icon">📦</span>
-          <span>Nuevo Material</span>
-        </a>
-        <a href="/tickets/nuevo" class="action-card action-warning">
-          <span class="action-icon">🎫</span>
-          <span>Nuevo Ticket</span>
-        </a>
-        <a href="/visitas/nuevo" class="action-card action-success">
-          <span class="action-icon">📅</span>
-          <span>Nueva Visita</span>
-        </a>
-        <a href="/inventario/categorias" class="action-card action-secondary">
-          <span class="action-icon">📋</span>
-          <span>Categorías</span>
-        </a>
+        <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
+          <a href="/empresas" class="action-card action-primary">
+            <span class="action-icon">🏢</span>
+            <span>Empresas</span>
+          </a>
+          <a href="/tickets" class="action-card action-warning">
+            <span class="action-icon">🎫</span>
+            <span>Gestionar Tickets</span>
+          </a>
+          <a href="/inventario" class="action-card action-secondary">
+            <span class="action-icon">📦</span>
+            <span>Inventario</span>
+          </a>
+          <a href="/servidores" class="action-card action-success">
+            <span class="action-icon">🖥️</span>
+            <span>Servidores</span>
+          </a>
+        <% } else { %>
+          <a href="/tickets/nuevo" class="action-card action-warning">
+            <span class="action-icon">🎫</span>
+            <span>Nuevo Ticket</span>
+          </a>
+          <a href="/tickets" class="action-card action-secondary">
+            <span class="action-icon">�</span>
+            <span>Ver Mis Tickets</span>
+          </a>
+          <a href="/inventario" class="action-card action-primary">
+            <span class="action-icon">📦</span>
+            <span>Ver Inventario</span>
+          </a>
+          <a href="/servidores" class="action-card action-success">
+            <span class="action-icon">�️</span>
+            <span>Ver Servidores</span>
+          </a>
+        <% } %>
       </div>
     </div>
   </main>
 
   <%- include('../partials/footer') %>
+  
+  <script>
+    // Animar barras de progreso al cargar
+    document.addEventListener('DOMContentLoaded', function() {
+      const progressBars = document.querySelectorAll('.progress-bar');
+      progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+          bar.style.width = width;
+        }, 100);
+      });
+    });
+
+    // Exportar contactos de empresas a CSV
+    function exportarContactosEmpresas() {
+      const empresas = <%- JSON.stringify(stats.empresasConContactos || []) %>;
+      
+      if (empresas.length === 0) {
+        alert('No hay empresas para exportar');
+        return;
+      }
+
+      // Crear CSV
+      let csv = 'Empresa,Email,Teléfono,Dirección,Usuarios,Materiales,Tickets Activos\n';
+      
+      empresas.forEach(emp => {
+        csv += `"${emp.nombre}","${emp.email}","${emp.telefono}","${emp.direccion || ''}",${emp.total_usuarios},${emp.total_materiales},${emp.tickets_activos}\n`;
+      });
+
+      // Descargar archivo
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `contactos_empresas_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Exportar usuarios a CSV
+    function exportarContactosUsuarios() {
+      const usuarios = <%- JSON.stringify(stats.usuariosConContactos || []) %>;
+      
+      if (usuarios.length === 0) {
+        alert('No hay usuarios para exportar');
+        return;
+      }
+
+      // Crear CSV
+      let csv = 'Nombre,Email,Empresa,Teléfono Empresa,Rol\n';
+      
+      usuarios.forEach(user => {
+        csv += `"${user.nombre}","${user.email}","${user.empresa_nombre || 'SKN'}","${user.empresa_telefono || ''}","${user.rol}"\n`;
+      });
+
+      // Descargar archivo
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `contactos_usuarios_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
 </body>
 </html>

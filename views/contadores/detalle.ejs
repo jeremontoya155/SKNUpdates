@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>📊 Detalle de Contador</h1>
+      <div>
+        <% if (esSKN) { %>
+          <a href="/contadores/editar/<%= contador.id %>" class="btn btn-warning">✏️ Editar</a>
+        <% } %>
+        <a href="/contadores" class="btn btn-secondary">⬅️ Volver</a>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-header">
+        <h2><%= contador.impresora_nombre %></h2>
+        <span class="badge badge-primary">
+          <%= new Date(contador.fecha_lectura).toLocaleDateString('es-AR') %>
+        </span>
+      </div>
+
+      <div class="detail-content">
+        <% if (esSKN) { %>
+          <div class="detail-row">
+            <div class="detail-item">
+              <label>🏢 Empresa</label>
+              <p><strong><%= contador.empresa_nombre %></strong></p>
+            </div>
+          </div>
+        <% } %>
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>🖨️ Impresora</label>
+            <p><%= contador.impresora_nombre %></p>
+          </div>
+          <div class="detail-item">
+            <label>🏷️ Marca / Modelo</label>
+            <p><%= contador.marca %> <%= contador.modelo %></p>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>📄 Contador Blanco y Negro</label>
+            <p><strong><code><%= contador.contador_byn.toLocaleString() %></code></strong> páginas</p>
+          </div>
+          <div class="detail-item">
+            <label>🎨 Contador Color</label>
+            <p><strong><code><%= contador.contador_color.toLocaleString() %></code></strong> páginas</p>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-item full-width">
+            <label>📊 Total de Páginas</label>
+            <p style="font-size: 1.5rem; color: var(--primary-color);">
+              <strong><%= contador.total_paginas.toLocaleString() %></strong> páginas
+            </p>
+          </div>
+        </div>
+
+        <% if (contador.observaciones) { %>
+          <div class="detail-row">
+            <div class="detail-item full-width">
+              <label>📋 Observaciones</label>
+              <p><%= contador.observaciones %></p>
+            </div>
+          </div>
+        <% } %>
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>👤 Registrado por</label>
+            <p><%= contador.registrado_por_nombre || 'N/A' %></p>
+          </div>
+          <div class="detail-item">
+            <label>📅 Fecha de Registro</label>
+            <p><%= new Date(contador.fecha_creacion).toLocaleString('es-AR') %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Histórico de lecturas -->
+    <% if (historico && historico.length > 0) { %>
+      <div class="detail-card" style="margin-top: 2rem;">
+        <div class="detail-header">
+          <h2>📈 Histórico de Lecturas</h2>
+        </div>
+        <div class="detail-content">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>B&N</th>
+                  <th>Color</th>
+                  <th>Total</th>
+                  <th>Incremento</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% 
+                  let anteriorTotal = null;
+                  historico.forEach((h, index) => { 
+                    const incremento = anteriorTotal !== null ? h.total_paginas - anteriorTotal : 0;
+                    anteriorTotal = h.total_paginas;
+                %>
+                  <tr>
+                    <td><%= new Date(h.fecha_lectura).toLocaleDateString('es-AR') %></td>
+                    <td><code><%= h.contador_byn.toLocaleString() %></code></td>
+                    <td><code><%= h.contador_color.toLocaleString() %></code></td>
+                    <td><strong><code><%= h.total_paginas.toLocaleString() %></code></strong></td>
+                    <td>
+                      <% if (index < historico.length - 1) { %>
+                        <span class="<%= incremento > 0 ? 'badge badge-success' : 'badge' %>">
+                          <%= incremento > 0 ? '+' : '' %><%= incremento.toLocaleString() %>
+                        </span>
+                      <% } else { %>
+                        <span class="badge">Inicial</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <small style="display: block; margin-top: 1rem; color: #666;">
+            💡 Mostrando las últimas <%= historico.length %> lecturas
+          </small>
+        </div>
+      </div>
+    <% } %>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

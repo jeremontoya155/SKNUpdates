@@ -18,73 +18,170 @@
       <div class="alert alert-error"><%= error %></div>
     <% } %>
 
-    <h1>Ticket #<%= ticket.id %></h1>
-
-    <div class="detail-card">
-      <h2><%= ticket.titulo %></h2>
-      <p><strong>Estado:</strong> <span class="badge badge-<%= ticket.estado %>"><%= ticket.estado %></span></p>
-      <p><strong>Prioridad:</strong> <span class="badge badge-prioridad-<%= ticket.prioridad %>"><%= ticket.prioridad %></span></p>
-      <p><strong>Solicitante:</strong> <%= ticket.solicitante_nombre %></p>
-      <p><strong>Asignado a:</strong> <%= ticket.asignado_nombre || 'Sin asignar' %></p>
-      <p><strong>Fecha Creación:</strong> <%= new Date(ticket.fecha_creacion).toLocaleString('es-ES') %></p>
-      <% if (ticket.fecha_cierre) { %>
-        <p><strong>Fecha Cierre:</strong> <%= new Date(ticket.fecha_cierre).toLocaleString('es-ES') %></p>
-      <% } %>
-      <p><strong>Descripción:</strong></p>
-      <p><%= ticket.descripcion %></p>
+    <div class="page-header">
+      <h1>🎫 Ticket #<%= ticket.id %></h1>
+      <a href="/tickets" class="btn btn-secondary">⬅️ Volver</a>
     </div>
 
-    <% if (user.rol === 'admin' || user.rol === 'superadmin') { %>
-      <div class="actions-section">
-        <h3>Acciones</h3>
-        
-        <form action="/tickets/<%= ticket.id %>/estado" method="POST" class="inline-form">
-          <label>Cambiar Estado:</label>
-          <select name="estado" onchange="this.form.submit()">
-            <option value="abierto" <%= ticket.estado === 'abierto' ? 'selected' : '' %>>Abierto</option>
-            <option value="en_proceso" <%= ticket.estado === 'en_proceso' ? 'selected' : '' %>>En Proceso</option>
-            <option value="cerrado" <%= ticket.estado === 'cerrado' ? 'selected' : '' %>>Cerrado</option>
-            <option value="cancelado" <%= ticket.estado === 'cancelado' ? 'selected' : '' %>>Cancelado</option>
-          </select>
-        </form>
-
-        <form action="/tickets/<%= ticket.id %>/asignar" method="POST" class="inline-form">
-          <label>Asignar a:</label>
-          <select name="usuario_asignado">
-            <option value="">Sin asignar</option>
-            <% usuarios.forEach(u => { %>
-              <option value="<%= u.id %>" <%= ticket.usuario_asignado == u.id ? 'selected' : '' %>><%= u.nombre %></option>
-            <% }) %>
-          </select>
-          <button type="submit" class="btn-small btn-primary">Asignar</button>
-        </form>
+    <% if (!esSKN) { %>
+      <div class="alert alert-info">
+        ℹ️ Solo puedes visualizar y comentar. SKN gestionará el estado del ticket.
       </div>
     <% } %>
 
-    <div class="comentarios-section">
-      <h3>Comentarios</h3>
-      
-      <div class="comentarios-lista">
-        <% comentarios.forEach(com => { %>
-          <div class="comentario">
-            <p><strong><%= com.usuario_nombre %></strong> - <%= new Date(com.fecha_comentario).toLocaleString('es-ES') %></p>
-            <p><%= com.comentario %></p>
-          </div>
-        <% }) %>
+    <div class="detail-card">
+      <div class="detail-header">
+        <h2><%= ticket.titulo %></h2>
+        <% 
+          let estadoBadge = '';
+          let estadoTexto = '';
+          if (ticket.estado === 'abierto') {
+            estadoBadge = 'badge-warning';
+            estadoTexto = '⏳ Abierto';
+          } else if (ticket.estado === 'en_proceso') {
+            estadoBadge = 'badge-primary';
+            estadoTexto = '🔄 En Proceso';
+          } else if (ticket.estado === 'cerrado') {
+            estadoBadge = 'badge-success';
+            estadoTexto = '✅ Cerrado';
+          } else if (ticket.estado === 'cancelado') {
+            estadoBadge = 'badge';
+            estadoTexto = '⛔ Cancelado';
+          }
+
+          let prioridadBadge = '';
+          let prioridadTexto = '';
+          if (ticket.prioridad === 'baja') {
+            prioridadBadge = 'badge';
+            prioridadTexto = '🟢 Baja';
+          } else if (ticket.prioridad === 'media') {
+            prioridadBadge = 'badge-warning';
+            prioridadTexto = '🟡 Media';
+          } else if (ticket.prioridad === 'alta') {
+            prioridadBadge = 'badge-primary';
+            prioridadTexto = '🟠 Alta';
+          } else if (ticket.prioridad === 'urgente') {
+            prioridadBadge = 'badge-danger';
+            prioridadTexto = '🔴 Urgente';
+          }
+        %>
+        <span class="badge <%= estadoBadge %>"><%= estadoTexto %></span>
+        <span class="badge <%= prioridadBadge %>"><%= prioridadTexto %></span>
       </div>
 
-      <form action="/tickets/<%= ticket.id %>/comentario" method="POST" class="form">
-        <div class="form-group">
-          <label for="comentario">Agregar Comentario</label>
-          <textarea id="comentario" name="comentario" rows="3" required></textarea>
-          <input type="hidden" name="ticket_id" value="<%= ticket.id %>">
+      <div class="detail-content">
+        <% if (esSKN && ticket.empresa_nombre) { %>
+          <div class="detail-row">
+            <div class="detail-item">
+              <label>🏢 Empresa</label>
+              <p><strong><%= ticket.empresa_nombre %></strong></p>
+            </div>
+          </div>
+        <% } %>
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>👤 Solicitante</label>
+            <p><%= ticket.solicitante_nombre %></p>
+          </div>
+          <div class="detail-item">
+            <label>👨‍💼 Asignado a</label>
+            <p><%= ticket.asignado_nombre || '⚪ Sin asignar' %></p>
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary">Agregar Comentario</button>
-      </form>
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>📅 Fecha Creación</label>
+            <p><%= new Date(ticket.fecha_creacion).toLocaleString('es-AR') %></p>
+          </div>
+          <% if (ticket.fecha_cierre) { %>
+            <div class="detail-item">
+              <label>✅ Fecha Cierre</label>
+              <p><%= new Date(ticket.fecha_cierre).toLocaleString('es-AR') %></p>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-item full-width">
+            <label>📋 Descripción</label>
+            <p><%= ticket.descripcion %></p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="form-actions">
-      <a href="/tickets" class="btn btn-secondary">Volver a Tickets</a>
+    <!-- Acciones SOLO para SKN -->
+    <% if (esSKN) { %>
+      <div class="detail-card" style="margin-top: 2rem; background-color: #fff8e1;">
+        <div class="detail-header">
+          <h3>⚙️ Acciones (Solo SKN)</h3>
+        </div>
+        <div class="detail-content">
+          <div class="form-row">
+            <form action="/tickets/<%= ticket.id %>/asignarme" method="POST" style="display: inline;">
+              <button type="submit" class="btn btn-primary">👤 Asignarme este ticket</button>
+            </form>
+
+            <form action="/tickets/<%= ticket.id %>/asignar" method="POST" style="display: inline;">
+              <select name="usuario_asignado" required>
+                <option value="">Asignar a otro usuario...</option>
+                <% usuariosSKN.forEach(u => { %>
+                  <option value="<%= u.id %>" <%= ticket.usuario_asignado == u.id ? 'selected' : '' %>><%= u.nombre_completo %></option>
+                <% }) %>
+              </select>
+              <button type="submit" class="btn btn-warning">👥 Asignar</button>
+            </form>
+          </div>
+
+          <div class="form-row" style="margin-top: 1rem;">
+            <form action="/tickets/<%= ticket.id %>/estado" method="POST" style="display: inline;">
+              <label>Cambiar Estado:</label>
+              <select name="estado" required>
+                <option value="abierto" <%= ticket.estado === 'abierto' ? 'selected' : '' %>>⏳ Abierto</option>
+                <option value="en_proceso" <%= ticket.estado === 'en_proceso' ? 'selected' : '' %>>🔄 En Proceso</option>
+                <option value="cerrado" <%= ticket.estado === 'cerrado' ? 'selected' : '' %>>✅ Cerrado</option>
+                <option value="cancelado" <%= ticket.estado === 'cancelado' ? 'selected' : '' %>>⛔ Cancelado</option>
+              </select>
+              <button type="submit" class="btn btn-primary">💾 Actualizar Estado</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Comentarios -->
+    <div class="detail-card" style="margin-top: 2rem;">
+      <div class="detail-header">
+        <h3>💬 Comentarios</h3>
+      </div>
+      
+      <div class="detail-content">
+        <% if (comentarios.length === 0) { %>
+          <p style="color: #666; text-align: center; padding: 2rem;">No hay comentarios aún</p>
+        <% } else { %>
+          <div class="comments-list">
+            <% comentarios.forEach(com => { %>
+              <div class="comment-item" style="border-left: 3px solid var(--primary-color); padding-left: 1rem; margin-bottom: 1rem;">
+                <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                  <strong><%= com.usuario_nombre %></strong> • <%= new Date(com.fecha_comentario).toLocaleString('es-AR') %>
+                </p>
+                <p style="margin: 0.5rem 0 0 0;"><%= com.comentario %></p>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+
+        <form action="/tickets/<%= ticket.id %>/comentario" method="POST" style="margin-top: 2rem;">
+          <div class="form-group">
+            <label for="comentario">Agregar Comentario</label>
+            <textarea id="comentario" name="comentario" rows="3" required placeholder="Escribe tu comentario aquí..."></textarea>
+            <input type="hidden" name="ticket_id" value="<%= ticket.id %>">
+          </div>
+          <button type="submit" class="btn btn-primary">💬 Agregar Comentario</button>
+        </form>
+      </div>
     </div>
   </main>
 

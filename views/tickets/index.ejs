@@ -19,46 +19,97 @@
     <% } %>
 
     <div class="page-header">
-      <h1>Tickets / Solicitudes</h1>
-      <a href="/tickets/nuevo" class="btn btn-primary">+ Nuevo Ticket</a>
+      <h1>🎫 Tickets / Solicitudes</h1>
+      <a href="/tickets/nuevo" class="btn btn-primary">➕ Nuevo Ticket</a>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Título</th>
-          <th>Solicitante</th>
-          <th>Estado</th>
-          <th>Prioridad</th>
-          <th>Asignado a</th>
-          <th>Fecha Creación</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% tickets.forEach(ticket => { %>
-          <tr>
-            <td>#<%= ticket.id %></td>
-            <td><%= ticket.titulo %></td>
-            <td><%= ticket.solicitante_nombre %></td>
-            <td><span class="badge badge-<%= ticket.estado %>"><%= ticket.estado %></span></td>
-            <td><span class="badge badge-prioridad-<%= ticket.prioridad %>"><%= ticket.prioridad %></span></td>
-            <td><%= ticket.asignado_nombre || 'Sin asignar' %></td>
-            <td><%= new Date(ticket.fecha_creacion).toLocaleDateString('es-ES') %></td>
-            <td>
-              <a href="/tickets/<%= ticket.id %>" class="btn-small">Ver Detalle</a>
-            </td>
-          </tr>
-        <% }) %>
+    <% if (esSKN) { %>
+      <div class="alert alert-info">
+        ℹ️ Como usuario SKN, ves TODOS los tickets de todas las empresas. Puedes asignártelos y cambiar su estado.
+      </div>
+    <% } else { %>
+      <div class="alert alert-info">
+        ℹ️ Visualizando tickets de tu empresa. Solo puedes crear tickets y agregar comentarios. SKN gestiona los estados.
+      </div>
+    <% } %>
 
-        <% if (tickets.length === 0) { %>
-          <tr>
-            <td colspan="8" style="text-align: center;">No hay tickets registrados</td>
-          </tr>
-        <% } %>
-      </tbody>
-    </table>
+    <% if (tickets.length === 0) { %>
+      <div class="empty-state">
+        <p>📭 No hay tickets registrados</p>
+        <a href="/tickets/nuevo" class="btn btn-primary">Crear primer ticket</a>
+      </div>
+    <% } else { %>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <% if (esSKN) { %>
+                <th>Empresa</th>
+              <% } %>
+              <th>Título</th>
+              <th>Solicitante</th>
+              <th>Estado</th>
+              <th>Prioridad</th>
+              <th>Asignado a</th>
+              <th>Fecha</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% tickets.forEach(ticket => { 
+              let estadoBadge = '';
+              let estadoTexto = '';
+              if (ticket.estado === 'abierto') {
+                estadoBadge = 'badge-warning';
+                estadoTexto = '⏳ Abierto';
+              } else if (ticket.estado === 'en_proceso') {
+                estadoBadge = 'badge-primary';
+                estadoTexto = '🔄 En Proceso';
+              } else if (ticket.estado === 'cerrado') {
+                estadoBadge = 'badge-success';
+                estadoTexto = '✅ Cerrado';
+              } else if (ticket.estado === 'cancelado') {
+                estadoBadge = 'badge';
+                estadoTexto = '⛔ Cancelado';
+              }
+
+              let prioridadBadge = '';
+              let prioridadTexto = '';
+              if (ticket.prioridad === 'baja') {
+                prioridadBadge = 'badge';
+                prioridadTexto = '🟢 Baja';
+              } else if (ticket.prioridad === 'media') {
+                prioridadBadge = 'badge-warning';
+                prioridadTexto = '🟡 Media';
+              } else if (ticket.prioridad === 'alta') {
+                prioridadBadge = 'badge-primary';
+                prioridadTexto = '🟠 Alta';
+              } else if (ticket.prioridad === 'urgente') {
+                prioridadBadge = 'badge-danger';
+                prioridadTexto = '🔴 Urgente';
+              }
+            %>
+              <tr>
+                <td><strong>#<%= ticket.id %></strong></td>
+                <% if (esSKN) { %>
+                  <td><%= ticket.empresa_nombre %></td>
+                <% } %>
+                <td><%= ticket.titulo %></td>
+                <td><%= ticket.solicitante_nombre %></td>
+                <td><span class="badge <%= estadoBadge %>"><%= estadoTexto %></span></td>
+                <td><span class="badge <%= prioridadBadge %>"><%= prioridadTexto %></span></td>
+                <td><%= ticket.asignado_nombre || '⚪ Sin asignar' %></td>
+                <td><%= new Date(ticket.fecha_creacion).toLocaleDateString('es-AR') %></td>
+                <td>
+                  <a href="/tickets/<%= ticket.id %>" class="btn btn-sm">👁️ Ver</a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
   </main>
 
   <%- include('../partials/footer') %>

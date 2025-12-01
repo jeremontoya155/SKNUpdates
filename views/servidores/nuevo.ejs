@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>➕ Nuevo Servidor</h1>
+      <a href="/servidores" class="btn btn-secondary">⬅️ Volver</a>
+    </div>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <form action="/servidores/nuevo" method="POST">
+      <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
+        <div class="form-group">
+          <label for="empresa_id">Empresa *</label>
+          <select id="empresa_id" name="empresa_id" required>
+            <option value="">Seleccionar empresa</option>
+            <% empresas.forEach(emp => { %>
+              <option value="<%= emp.id %>"><%= emp.nombre %></option>
+            <% }) %>
+          </select>
+        </div>
+      <% } %>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="tipo">Tipo de Servidor</label>
+          <select id="tipo" name="tipo">
+            <option value="">Seleccionar tipo</option>
+            <option value="TS">TS - Terminal Server</option>
+            <option value="BD">BD - Base de Datos</option>
+            <option value="FRX">FRX - FreeRX</option>
+            <option value="SRV AD">SRV AD - Active Directory</option>
+            <option value="SRVBI">SRVBI - Business Intelligence</option>
+            <option value="SRV APP">SRV APP - Aplicaciones</option>
+            <option value="DVR">DVR - Video Vigilancia</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="nombre">Nombre del Servidor *</label>
+          <input type="text" id="nombre" name="nombre" required placeholder="Ej: TS Corsider">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="ip_externa">IP Externa</label>
+          <input type="text" id="ip_externa" name="ip_externa" placeholder="186.125.191.70">
+        </div>
+
+        <div class="form-group">
+          <label for="puerto">Puerto</label>
+          <input type="text" id="puerto" name="puerto" placeholder="13320">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="ip_interna">IP Interna *</label>
+          <input type="text" id="ip_interna" name="ip_interna" required placeholder="192.168.2.70">
+        </div>
+
+        <div class="form-group">
+          <label for="usuario">Usuario</label>
+          <input type="text" id="usuario" name="usuario" placeholder="Administrador">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <input type="text" id="password" name="password" placeholder="********">
+        <small>⚠️ Será almacenada en texto plano temporalmente</small>
+      </div>
+
+      <div class="form-group">
+        <label for="observaciones">Observaciones</label>
+        <textarea id="observaciones" name="observaciones" rows="3" placeholder="Notas adicionales sobre el servidor"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">💾 Guardar Servidor</button>
+        <a href="/servidores" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

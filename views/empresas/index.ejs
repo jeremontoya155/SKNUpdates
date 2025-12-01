@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>🏢 Gestión de Empresas</h1>
+      <a href="/empresas/nueva" class="btn btn-primary">➕ Nueva Empresa</a>
+    </div>
+
+    <div class="alert alert-warning">
+      ⚠️ Solo usuarios SKN pueden crear y gestionar empresas
+    </div>
+
+    <% if (empresas.length === 0) { %>
+      <div class="empty-state">
+        <p>📭 No hay empresas registradas</p>
+        <a href="/empresas/nueva" class="btn btn-primary">Crear primera empresa</a>
+      </div>
+    <% } else { %>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Usuarios</th>
+              <th>Materiales</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% empresas.forEach(emp => { %>
+              <tr>
+                <td><strong><%= emp.nombre %></strong></td>
+                <td><%= emp.email || 'N/A' %></td>
+                <td><%= emp.telefono || 'N/A' %></td>
+                <td><%= emp.total_usuarios || 0 %></td>
+                <td><%= emp.total_materiales || 0 %></td>
+                <td>
+                  <span class="badge <%= emp.activo ? 'badge-success' : 'badge-danger' %>">
+                    <%= emp.activo ? '✅ Activa' : '❌ Inactiva' %>
+                  </span>
+                </td>
+                <td>
+                  <a href="/empresas/<%= emp.id %>" class="btn btn-sm">👁️ Ver</a>
+                  <form action="/empresas/<%= emp.id %>/toggle" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-sm <%= emp.activo ? 'btn-warning' : 'btn-success' %>">
+                      <%= emp.activo ? '❌' : '✅' %>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

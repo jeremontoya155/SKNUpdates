@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>➕ Registrar Contador de Impresora</h1>
+      <a href="/contadores" class="btn btn-secondary">⬅️ Volver</a>
+    </div>
+
+    <div class="alert alert-warning">
+      ⚠️ Solo usuarios SKN pueden registrar contadores
+    </div>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <form action="/contadores/nuevo" method="POST">
+      <div class="form-group">
+        <label for="material_id">Impresora *</label>
+        <select id="material_id" name="material_id" required>
+          <option value="">Seleccionar impresora</option>
+          <% 
+            let empresaActual = '';
+            impresoras.forEach(imp => { 
+              if (imp.empresa_nombre !== empresaActual) {
+                if (empresaActual !== '') { %>
+                  </optgroup>
+                <% }
+                empresaActual = imp.empresa_nombre;
+                %>
+                <optgroup label="🏢 <%= imp.empresa_nombre %>">
+              <% } %>
+              <option value="<%= imp.id %>">
+                <%= imp.nombre %> (<%= imp.marca %> <%= imp.modelo %>)
+              </option>
+            <% }) %>
+            <% if (impresoras.length > 0) { %>
+              </optgroup>
+            <% } %>
+        </select>
+        <small>💡 Las impresoras están agrupadas por empresa</small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="fecha_lectura">Fecha de Lectura *</label>
+          <input 
+            type="date" 
+            id="fecha_lectura" 
+            name="fecha_lectura" 
+            value="<%= new Date().toISOString().split('T')[0] %>"
+            required
+          >
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="contador_byn">Contador Blanco y Negro</label>
+          <input 
+            type="number" 
+            id="contador_byn" 
+            name="contador_byn" 
+            min="0"
+            value="0"
+            placeholder="0"
+          >
+          <small>📄 Páginas impresas en B&N</small>
+        </div>
+
+        <div class="form-group">
+          <label for="contador_color">Contador Color</label>
+          <input 
+            type="number" 
+            id="contador_color" 
+            name="contador_color" 
+            min="0"
+            value="0"
+            placeholder="0"
+          >
+          <small>🎨 Páginas impresas a color</small>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Total de Páginas</label>
+        <div class="readonly-field" id="total_display">0</div>
+        <small>🔢 Calculado automáticamente (B&N + Color)</small>
+      </div>
+
+      <div class="form-group">
+        <label for="observaciones">Observaciones</label>
+        <textarea 
+          id="observaciones" 
+          name="observaciones" 
+          rows="3"
+          placeholder="Notas adicionales sobre esta lectura..."
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">💾 Guardar Contador</button>
+        <a href="/contadores" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </main>
+
+  <%- include('../partials/footer') %>
+
+  <script>
+    // Calcular total automáticamente
+    const bynInput = document.getElementById('contador_byn');
+    const colorInput = document.getElementById('contador_color');
+    const totalDisplay = document.getElementById('total_display');
+
+    function calcularTotal() {
+      const byn = parseInt(bynInput.value) || 0;
+      const color = parseInt(colorInput.value) || 0;
+      const total = byn + color;
+      totalDisplay.textContent = total.toLocaleString();
+    }
+
+    bynInput.addEventListener('input', calcularTotal);
+    colorInput.addEventListener('input', calcularTotal);
+    
+    // Calcular inicial
+    calcularTotal();
+  </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>📊 Contadores de Impresoras</h1>
+      <% if (esSKN) { %>
+        <a href="/contadores/nuevo" class="btn btn-primary">➕ Registrar Contador</a>
+      <% } %>
+    </div>
+
+    <% if (esSKN) { %>
+      <div class="alert alert-info">
+        ℹ️ Como usuario SKN, puedes ver y gestionar contadores de todas las empresas
+      </div>
+    <% } else { %>
+      <div class="alert alert-info">
+        ℹ️ Visualizando contadores de tus impresoras. Solo SKN puede crear/editar contadores.
+      </div>
+    <% } %>
+
+    <% if (contadores.length === 0) { %>
+      <div class="empty-state">
+        <p>📭 No hay contadores registrados</p>
+        <% if (esSKN) { %>
+          <a href="/contadores/nuevo" class="btn btn-primary">Registrar primer contador</a>
+        <% } %>
+      </div>
+    <% } else { %>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <% if (esSKN) { %>
+                <th>Empresa</th>
+              <% } %>
+              <th>Impresora</th>
+              <th>Marca/Modelo</th>
+              <th>B&N</th>
+              <th>Color</th>
+              <th>Total</th>
+              <th>Registrado por</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% contadores.forEach(contador => { %>
+              <tr>
+                <td><%= new Date(contador.fecha_lectura).toLocaleDateString('es-AR') %></td>
+                <% if (esSKN) { %>
+                  <td><strong><%= contador.empresa_nombre %></strong></td>
+                <% } %>
+                <td><%= contador.impresora_nombre %></td>
+                <td><%= contador.marca %> <%= contador.modelo %></td>
+                <td><code><%= contador.contador_byn.toLocaleString() %></code></td>
+                <td><code><%= contador.contador_color.toLocaleString() %></code></td>
+                <td><strong><code><%= contador.total_paginas.toLocaleString() %></code></strong></td>
+                <td><%= contador.registrado_por_nombre || 'N/A' %></td>
+                <td>
+                  <a href="/contadores/<%= contador.id %>" class="btn btn-sm">👁️ Ver</a>
+                  <% if (esSKN) { %>
+                    <a href="/contadores/editar/<%= contador.id %>" class="btn btn-sm btn-warning">✏️</a>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if (esSKN) { %>
+        <div class="stats-summary">
+          <h3>📈 Resumen General</h3>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-value"><%= contadores.length %></span>
+              <span class="stat-label">Registros totales</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value">
+                <%= contadores.reduce((sum, c) => sum + parseInt(c.total_paginas), 0).toLocaleString() %>
+              </span>
+              <span class="stat-label">Total páginas</span>
+            </div>
+          </div>
+        </div>
+      <% } %>
+    <% } %>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

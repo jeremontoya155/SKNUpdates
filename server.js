@@ -43,12 +43,20 @@ const usuariosRoutes = require('./routes/usuariosRoutes');
 const inventarioRoutes = require('./routes/inventarioRoutes');
 const ticketsRoutes = require('./routes/ticketsRoutes');
 const visitasRoutes = require('./routes/visitasRoutes');
+const servidoresRoutes = require('./routes/servidoresRoutes');
+const contadoresRoutes = require('./routes/contadoresRoutes');
+const empresasRoutes = require('./routes/empresasRoutes');
 
 // Usar rutas
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/usuarios', usuariosRoutes);
 app.use('/inventario', inventarioRoutes);
+app.use('/tickets', ticketsRoutes);
+app.use('/visitas', visitasRoutes);
+app.use('/servidores', servidoresRoutes);
+app.use('/contadores', contadoresRoutes);
+app.use('/empresas', empresasRoutes);
 app.use('/tickets', ticketsRoutes);
 app.use('/visitas', visitasRoutes);
 

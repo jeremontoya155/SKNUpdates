@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ticketsController = require('../controllers/ticketsController');
-const { isAuthenticated } = require('./middleware');
+const { isAuthenticated, isSKNUser } = require('./middleware');
 
 // Rutas de tickets
 router.get('/', isAuthenticated, ticketsController.index);
@@ -9,7 +9,10 @@ router.get('/nuevo', isAuthenticated, ticketsController.showNuevo);
 router.post('/nuevo', isAuthenticated, ticketsController.crear);
 router.get('/:id', isAuthenticated, ticketsController.detalle);
 router.post('/:id/comentario', isAuthenticated, ticketsController.agregarComentario);
-router.post('/:id/estado', isAuthenticated, ticketsController.cambiarEstado);
-router.post('/:id/asignar', isAuthenticated, ticketsController.asignar);
+
+// SOLO SKN puede cambiar estado y asignar
+router.post('/:id/estado', isSKNUser, ticketsController.cambiarEstado);
+router.post('/:id/asignar', isSKNUser, ticketsController.asignar);
+router.post('/:id/asignarme', isSKNUser, ticketsController.asignarme);
 
 module.exports = router;
