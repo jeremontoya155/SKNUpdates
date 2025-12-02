@@ -1,0 +1,192 @@
+<%- include('../layouts/main', { title: 'Nueva Evaluación Interna - SKN', body: `
+  <div class="container">
+    <div class="page-header">
+      <h1>➕ Nueva Evaluación Interna</h1>
+      <a href="/evaluaciones" class="btn btn-secondary">← Volver</a>
+    </div>
+
+    <div class="form-card">
+      <form action="/evaluaciones" method="POST" enctype="multipart/form-data">
+        
+        <!-- Sección: Información Básica -->
+        <div class="form-section">
+          <h3>👤 Información Básica</h3>
+          
+          <div class="form-group">
+            <label for="usuario_evaluado_id">Empleado a Evaluar *</label>
+            <select id="usuario_evaluado_id" name="usuario_evaluado_id" required>
+              <option value="">Seleccionar empleado...</option>
+              ${usuarios.map(u => `
+                <option value="${u.id}">
+                  ${u.nombre} - ${u.email} (${u.empresa_nombre || 'Sin empresa'})
+                </option>
+              `).join('')}
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="titulo">Título de la Evaluación *</label>
+              <input type="text" id="titulo" name="titulo" required placeholder="Ej: Evaluación Q4 2024">
+            </div>
+
+            <div class="form-group">
+              <label for="tipo">Tipo de Evaluación</label>
+              <select id="tipo" name="tipo">
+                <option value="general">General</option>
+                <option value="desempeño">Desempeño</option>
+                <option value="actitud">Actitud</option>
+                <option value="puntualidad">Puntualidad</option>
+                <option value="trabajo_equipo">Trabajo en Equipo</option>
+                <option value="anual">Evaluación Anual</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="descripcion">Descripción</label>
+            <textarea id="descripcion" name="descripcion" rows="3" placeholder="Descripción general de la evaluación..."></textarea>
+          </div>
+        </div>
+
+        <!-- Sección: Puntajes -->
+        <div class="form-section">
+          <h3>⭐ Puntajes (1-10)</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="puntaje_desempeno">Desempeño</label>
+              <input type="number" id="puntaje_desempeno" name="puntaje_desempeno" min="1" max="10" placeholder="1-10">
+            </div>
+
+            <div class="form-group">
+              <label for="puntaje_actitud">Actitud</label>
+              <input type="number" id="puntaje_actitud" name="puntaje_actitud" min="1" max="10" placeholder="1-10">
+            </div>
+
+            <div class="form-group">
+              <label for="puntaje_puntualidad">Puntualidad</label>
+              <input type="number" id="puntaje_puntualidad" name="puntaje_puntualidad" min="1" max="10" placeholder="1-10">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="puntaje_trabajo_equipo">Trabajo en Equipo</label>
+              <input type="number" id="puntaje_trabajo_equipo" name="puntaje_trabajo_equipo" min="1" max="10" placeholder="1-10">
+            </div>
+
+            <div class="form-group">
+              <label for="puntaje_general">⭐ Puntaje General *</label>
+              <input type="number" id="puntaje_general" name="puntaje_general" min="1" max="10" placeholder="1-10">
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Notas Confidenciales -->
+        <div class="form-section" style="background: #fff3cd; border: 2px solid #ffc107;">
+          <h3>🔒 Información Confidencial</h3>
+          <p style="color: #856404; margin-bottom: 1rem;">
+            <strong>⚠️ ATENCIÓN:</strong> Esta información es COMPLETAMENTE CONFIDENCIAL y solo visible para admins de SKN.
+          </p>
+          
+          <div class="form-group">
+            <label for="notas_confidenciales">Notas Confidenciales</label>
+            <textarea id="notas_confidenciales" name="notas_confidenciales" rows="4" 
+              placeholder="Notas privadas, observaciones internas, comentarios confidenciales..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="contraseñas_accesos">Contraseñas y Accesos</label>
+            <textarea id="contraseñas_accesos" name="contraseñas_accesos" rows="3" 
+              placeholder="Contraseñas de sistemas, accesos, credenciales, etc."></textarea>
+            <small style="color: #666;">Almacenar aquí credenciales de sistemas del empleado</small>
+          </div>
+
+          <div class="form-group">
+            <label for="imagenes">📎 Evidencias (Imágenes/PDFs)</label>
+            <input type="file" id="imagenes" name="imagenes" multiple accept="image/*,.pdf">
+            <small style="color: #666;">Capturas de pantalla, documentos, evidencias. Máx 10 archivos, 5MB c/u</small>
+          </div>
+        </div>
+
+        <!-- Sección: Recomendaciones y Decisiones -->
+        <div class="form-section">
+          <h3>💡 Recomendaciones y Decisiones</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="recomendacion">Recomendación</label>
+              <select id="recomendacion" name="recomendacion">
+                <option value="">Sin recomendación</option>
+                <option value="premio">🏆 Premio/Bono</option>
+                <option value="aumento">💰 Aumento de Sueldo</option>
+                <option value="capacitacion">📚 Necesita Capacitación</option>
+                <option value="advertencia">⚠️ Advertencia</option>
+                <option value="despido">❌ Considerar Despido</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="monto_sugerido">Monto Sugerido ($)</label>
+              <input type="number" id="monto_sugerido" name="monto_sugerido" step="0.01" min="0" placeholder="0.00">
+              <small style="color: #666;">Monto sugerido para premio o aumento</small>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <input type="checkbox" id="aprobado_para_premio" name="aprobado_para_premio">
+              <strong>✅ Aprobado para premio a fin de año</strong>
+            </label>
+          </div>
+        </div>
+
+        <!-- Sección: Período -->
+        <div class="form-section">
+          <h3>📅 Período de Evaluación</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="periodo_inicio">Desde</label>
+              <input type="date" id="periodo_inicio" name="periodo_inicio">
+            </div>
+
+            <div class="form-group">
+              <label for="periodo_fin">Hasta</label>
+              <input type="date" id="periodo_fin" name="periodo_fin">
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">💾 Guardar Evaluación</button>
+          <a href="/evaluaciones" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <style>
+    .form-section {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      border: 1px solid #dee2e6;
+    }
+
+    .form-section h3 {
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary-color);
+    }
+
+    .form-card {
+      background: #f8f9fa;
+      padding: 2rem;
+      border-radius: 8px;
+    }
+  </style>
+` }) %>

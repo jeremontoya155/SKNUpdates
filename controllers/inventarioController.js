@@ -8,10 +8,11 @@ const inventarioController = {
       const { buscar, categoria, empresa, stock } = req.query;
       
       let query = `
-        SELECT m.*, c.nombre as categoria_nombre, e.nombre as empresa_nombre
+        SELECT m.*, c.nombre as categoria_nombre, e.nombre as empresa_nombre, s.nombre as sucursal_nombre
         FROM materiales m 
         LEFT JOIN categorias_materiales c ON m.categoria_id = c.id 
         LEFT JOIN empresas e ON m.empresa_id = e.id
+        LEFT JOIN sucursales s ON m.sucursal_id = s.id
         WHERE m.activo = true
       `;
       
@@ -111,6 +112,12 @@ const inventarioController = {
         [user.empresa_id]
       );
 
+      // Obtener sucursales de la empresa
+      const sucursales = await db.query(
+        'SELECT * FROM sucursales WHERE empresa_id = $1 AND activo = true ORDER BY es_principal DESC, nombre',
+        [user.empresa_id]
+      );
+
       // Obtener atributos si se seleccionó una categoría
       let atributos = [];
       const categoriaId = req.query.categoria_id;
@@ -125,6 +132,7 @@ const inventarioController = {
       res.render('inventario/nuevo', { 
         title: 'Nuevo Material', 
         categorias: categorias.rows,
+        sucursales: sucursales.rows,
         atributos: atributos,
         categoriaId: categoriaId
       });
@@ -134,9 +142,9 @@ const inventarioController = {
     }
   },
 
-  // Crear material
+  // Crear nuevo material
   crear: async (req, res) => {
-    const { nombre, descripcion, codigo, marca, modelo, categoria_id, stock_actual, stock_minimo, precio_unitario, unidad_medida } = req.body;
+    const { categoria_id, nombre, marca, modelo, descripcion, codigo, stock_actual, stock_minimo, precio_unitario, unidad_medida, sucursal_id } = req.body;
     const user = req.session.user;
 
     try {
@@ -146,11 +154,11 @@ const inventarioController = {
         return res.redirect('/inventario/nuevo');
       }
       
-      // Insertar material con marca y modelo
+      // Insertar material con marca, modelo y sucursal
       const materialResult = await db.query(
-        `INSERT INTO materiales (empresa_id, categoria_id, nombre, marca, modelo, descripcion, codigo, stock_actual, stock_minimo, precio_unitario, unidad_medida) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
-        [user.empresa_id, categoria_id, nombre, marca, modelo, descripcion, codigo, stock_actual || 0, stock_minimo || 0, precio_unitario || 0, unidad_medida || 'unidad']
+        `INSERT INTO materiales (empresa_id, categoria_id, nombre, marca, modelo, descripcion, codigo, stock_actual, stock_minimo, precio_unitario, unidad_medida, sucursal_id) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+        [user.empresa_id, categoria_id, nombre, marca, modelo, descripcion, codigo, stock_actual || 0, stock_minimo || 0, precio_unitario || 0, unidad_medida || 'unidad', sucursal_id || null]
       );
 
       const materialId = materialResult.rows[0].id;
@@ -189,18 +197,20 @@ const inventarioController = {
       let material;
       if (user.rol === 'skn_admin' || user.rol === 'skn_user') {
         material = await db.query(
-          `SELECT m.*, c.nombre as categoria_nombre
+          `SELECT m.*, c.nombre as categoria_nombre, s.nombre as sucursal_nombre, s.codigo as sucursal_codigo
            FROM materiales m
            LEFT JOIN categorias_materiales c ON m.categoria_id = c.id
+           LEFT JOIN sucursales s ON m.sucursal_id = s.id
            WHERE m.id = $1`,
           [id]
         );
       } else {
         // Empresas solo pueden ver sus materiales
         material = await db.query(
-          `SELECT m.*, c.nombre as categoria_nombre
+          `SELECT m.*, c.nombre as categoria_nombre, s.nombre as sucursal_nombre, s.codigo as sucursal_codigo
            FROM materiales m
            LEFT JOIN categorias_materiales c ON m.categoria_id = c.id
+           LEFT JOIN sucursales s ON m.sucursal_id = s.id
            WHERE m.id = $1 AND m.empresa_id = $2`,
           [id, user.empresa_id]
         );

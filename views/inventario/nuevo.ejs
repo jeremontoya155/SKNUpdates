@@ -58,6 +58,21 @@
         </div>
 
         <div class="form-group">
+          <label for="sucursal_id">🏪 Sucursal / Ubicación</label>
+          <select id="sucursal_id" name="sucursal_id">
+            <option value="">Sin sucursal específica (Almacén Central)</option>
+            <% if (sucursales && sucursales.length > 0) { %>
+              <% sucursales.forEach(s => { %>
+                <option value="<%= s.id %>">
+                  <%= s.nombre %><% if (s.codigo) { %> (<%= s.codigo %>)<% } %><% if (s.es_principal) { %> ⭐<% } %>
+                </option>
+              <% }) %>
+            <% } %>
+          </select>
+          <small style="color: #666;">Indique en qué sucursal se encuentra este material</small>
+        </div>
+
+        <div class="form-group">
           <label for="unidad_medida">Unidad de Medida</label>
           <input type="text" id="unidad_medida" name="unidad_medida" placeholder="Por defecto: unidad" value="unidad">
         </div>

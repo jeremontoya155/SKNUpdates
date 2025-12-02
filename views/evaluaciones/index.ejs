@@ -1,0 +1,224 @@
+<%- include('../layouts/main', { title: 'Evaluaciones Internas - SKN', body: `
+  <div class="container">
+    <div class="page-header">
+      <div>
+        <h1>🔒 Evaluaciones Internas</h1>
+        <p class="subtitle">Sistema confidencial - Solo accesible para admin@skn.com</p>
+      </div>
+      <a href="/evaluaciones/nuevo" class="btn btn-primary">➕ Nueva Evaluación</a>
+    </div>
+
+    <!-- Banner de seguridad -->
+    <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;">
+      <strong>⚠️ ÁREA CONFIDENCIAL:</strong> Esta sección es EXCLUSIVA para admin@skn.com. 
+      Los empleados y otros usuarios NO tienen acceso a estas evaluaciones.
+    </div>
+
+    <!-- Filtros de búsqueda -->
+    <div class="filter-card">
+      <h3>🔍 Filtros de Búsqueda</h3>
+      <form method="GET" action="/evaluaciones">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="buscar">Buscar</label>
+            <input 
+              type="text" 
+              id="buscar" 
+              name="buscar" 
+              placeholder="Título, descripción o nombre"
+              value="${filtros.buscar || ''}"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="usuario">Empleado</label>
+            <select id="usuario" name="usuario">
+              <option value="">Todos los empleados</option>
+              ${usuariosSKN.map(u => `
+                <option value="${u.id}" ${filtros.usuario == u.id ? 'selected' : ''}>
+                  ${u.nombre} - ${u.empresa_nombre || 'Sin empresa'}
+                </option>
+              `).join('')}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="recomendacion">Recomendación</label>
+            <select id="recomendacion" name="recomendacion">
+              <option value="">Todas</option>
+              <option value="premio" ${filtros.recomendacion === 'premio' ? 'selected' : ''}>🏆 Premio</option>
+              <option value="aumento" ${filtros.recomendacion === 'aumento' ? 'selected' : ''}>💰 Aumento</option>
+              <option value="capacitacion" ${filtros.recomendacion === 'capacitacion' ? 'selected' : ''}>📚 Capacitación</option>
+              <option value="advertencia" ${filtros.recomendacion === 'advertencia' ? 'selected' : ''}>⚠️ Advertencia</option>
+              <option value="despido" ${filtros.recomendacion === 'despido' ? 'selected' : ''}>❌ Despido</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="periodo_inicio">Período desde</label>
+            <input type="date" id="periodo_inicio" name="periodo_inicio" value="${filtros.periodo_inicio || ''}">
+          </div>
+
+          <div class="form-group">
+            <label for="periodo_fin">Período hasta</label>
+            <input type="date" id="periodo_fin" name="periodo_fin" value="${filtros.periodo_fin || ''}">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">🔍 Buscar</button>
+          <a href="/evaluaciones" class="btn btn-secondary">🔄 Limpiar</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tabla de evaluaciones -->
+    <div class="table-card">
+      <h3>📊 Evaluaciones Registradas (${evaluaciones.length})</h3>
+      
+      ${evaluaciones.length === 0 ? `
+        <p style="text-align: center; padding: 2rem; color: #666;">
+          📭 No hay evaluaciones registradas
+        </p>
+      ` : `
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Empleado</th>
+                <th>Título</th>
+                <th>Tipo</th>
+                <th>Puntaje General</th>
+                <th>Recomendación</th>
+                <th>Premio</th>
+                <th>Período</th>
+                <th>Evaluador</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${evaluaciones.map(e => `
+                <tr>
+                  <td><strong>#${e.id}</strong></td>
+                  <td>
+                    <strong>${e.usuario_nombre}</strong><br>
+                    <small>${e.usuario_email}</small><br>
+                    <small class="badge badge-secondary">${e.empresa_nombre || 'Sin empresa'}</small>
+                  </td>
+                  <td>
+                    <strong>${e.titulo}</strong>
+                    ${e.imagenes && e.imagenes.length > 0 ? '<br><small>📎 ' + e.imagenes.length + ' archivos</small>' : ''}
+                  </td>
+                  <td><span class="badge badge-info">${e.tipo || 'general'}</span></td>
+                  <td>
+                    ${e.puntaje_general ? `
+                      <strong style="font-size: 1.2rem; color: ${
+                        e.puntaje_general >= 8 ? '#28a745' : 
+                        e.puntaje_general >= 6 ? '#ffc107' : 
+                        '#dc3545'
+                      };">${e.puntaje_general}/10</strong>
+                    ` : 'N/A'}
+                  </td>
+                  <td>
+                    ${e.recomendacion ? `
+                      <span class="badge ${
+                        e.recomendacion === 'premio' ? 'badge-success' :
+                        e.recomendacion === 'aumento' ? 'badge-success' :
+                        e.recomendacion === 'capacitacion' ? 'badge-info' :
+                        e.recomendacion === 'advertencia' ? 'badge-warning' :
+                        'badge-danger'
+                      }">
+                        ${
+                          e.recomendacion === 'premio' ? '🏆 Premio' :
+                          e.recomendacion === 'aumento' ? '💰 Aumento' :
+                          e.recomendacion === 'capacitacion' ? '📚 Capacitación' :
+                          e.recomendacion === 'advertencia' ? '⚠️ Advertencia' :
+                          '❌ Despido'
+                        }
+                      </span>
+                    ` : 'N/A'}
+                  </td>
+                  <td>
+                    ${e.aprobado_para_premio ? 
+                      '<span class="badge badge-success">✅ Aprobado</span>' : 
+                      '<span class="badge badge-secondary">➖ No</span>'
+                    }
+                    ${e.monto_sugerido ? '<br><small>$' + parseFloat(e.monto_sugerido).toLocaleString('es-AR') + '</small>' : ''}
+                  </td>
+                  <td>
+                    ${e.periodo_inicio ? new Date(e.periodo_inicio).toLocaleDateString('es-AR') : '—'}
+                    <br>a<br>
+                    ${e.periodo_fin ? new Date(e.periodo_fin).toLocaleDateString('es-AR') : '—'}
+                  </td>
+                  <td>
+                    <small>${e.evaluador_nombre}</small>
+                  </td>
+                  <td>${new Date(e.fecha_creacion).toLocaleDateString('es-AR')}</td>
+                  <td>
+                    <div class="action-buttons">
+                      <a href="/evaluaciones/${e.id}" class="btn-small btn-primary">👁️ Ver</a>
+                      <a href="/evaluaciones/${e.id}/editar" class="btn-small btn-secondary">✏️ Editar</a>
+                    </div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `}
+    </div>
+
+    <!-- Resumen estadístico -->
+    <div class="stats-grid" style="margin-top: 2rem;">
+      <div class="stat-card">
+        <span class="stat-value">${evaluaciones.length}</span>
+        <span class="stat-label">Total Evaluaciones</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">${evaluaciones.filter(e => e.aprobado_para_premio).length}</span>
+        <span class="stat-label">🏆 Aprobados para Premio</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">${evaluaciones.filter(e => e.puntaje_general >= 8).length}</span>
+        <span class="stat-label">⭐ Excelente (8-10)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">${evaluaciones.filter(e => e.puntaje_general >= 6 && e.puntaje_general < 8).length}</span>
+        <span class="stat-label">👍 Bueno (6-7)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">${evaluaciones.filter(e => e.puntaje_general < 6).length}</span>
+        <span class="stat-label">⚠️ Necesita Mejorar (<6)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">$${evaluaciones.reduce((sum, e) => sum + (parseFloat(e.monto_sugerido) || 0), 0).toLocaleString('es-AR')}</span>
+        <span class="stat-label">💰 Total Sugerido</span>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .filter-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-small {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.875rem;
+    }
+  </style>
+` }) %>

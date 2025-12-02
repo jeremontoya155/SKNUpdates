@@ -85,6 +85,7 @@
             <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
               <th>Empresa</th>
             <% } %>
+            <th>🏪 Sucursal</th>
             <th>Stock Actual</th>
             <th>Stock Mínimo</th>
             <th>Unidad</th>
@@ -101,6 +102,13 @@
               <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
                 <td><%= material.empresa_nombre || '-' %></td>
               <% } %>
+              <td>
+                <% if (material.sucursal_nombre) { %>
+                  <span class="badge badge-info"><%= material.sucursal_nombre %></span>
+                <% } else { %>
+                  <span style="color: #999;">Almacén Central</span>
+                <% } %>
+              </td>
               <td>
                 <%= material.stock_actual %>
                 <% if (material.stock_actual <= material.stock_minimo && material.stock_actual > 0) { %>

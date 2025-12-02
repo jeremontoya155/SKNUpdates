@@ -25,6 +25,15 @@
       <p><strong>Código:</strong> <%= material.codigo || 'N/A' %></p>
       <p><strong>Descripción:</strong> <%= material.descripcion || 'Sin descripción' %></p>
       <p><strong>Categoría:</strong> <%= material.categoria_nombre || 'Sin categoría' %></p>
+      <p><strong>🏪 Sucursal:</strong> 
+        <% if (material.sucursal_nombre) { %>
+          <span class="badge badge-info">
+            <%= material.sucursal_nombre %><% if (material.sucursal_codigo) { %> (<%= material.sucursal_codigo %>)<% } %>
+          </span>
+        <% } else { %>
+          <span style="color: #999;">Almacén Central</span>
+        <% } %>
+      </p>
       
       <% if (atributos && atributos.length > 0) { %>
         <h3>Características</h3>

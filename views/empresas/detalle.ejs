@@ -37,8 +37,8 @@
             <p><strong><%= empresa.nombre %></strong></p>
           </div>
           <div class="detail-item">
-            <label>� Fecha de Registro</label>
-            <p><%= new Date(empresa.fecha_creacion).toLocaleDateString('es-AR') %></p>
+            <label>🆔 CUIT</label>
+            <p><%= empresa.cuit || 'N/A' %></p>
           </div>
         </div>
 
@@ -54,16 +54,173 @@
         </div>
 
         <div class="detail-row">
-          <div class="detail-item full-width">
-            <label>📍 Dirección</label>
+          <div class="detail-item">
+            <label>🌐 Sitio Web</label>
+            <p>
+              <% if (empresa.sitio_web) { %>
+                <a href="<%= empresa.sitio_web %>" target="_blank" rel="noopener"><%= empresa.sitio_web %></a>
+              <% } else { %>
+                N/A
+              <% } %>
+            </p>
+          </div>
+          <div class="detail-item">
+            <label>📅 Fecha de Registro</label>
+            <p><%= new Date(empresa.fecha_creacion).toLocaleDateString('es-AR') %></p>
+          </div>
+        </div>
+
+        <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #333;">📍 Dirección Principal</h3>
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>Calle</label>
             <p><%= empresa.direccion || 'N/A' %></p>
+          </div>
+          <div class="detail-item">
+            <label>Ciudad</label>
+            <p><%= empresa.ciudad || 'N/A' %></p>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>Provincia</label>
+            <p><%= empresa.provincia || 'N/A' %></p>
+          </div>
+          <div class="detail-item">
+            <label>Código Postal</label>
+            <p><%= empresa.codigo_postal || 'N/A' %></p>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Sucursales -->
+    <div class="detail-card" style="margin-top: 2rem;">
+      <div class="detail-header">
+        <h2>🏪 Sucursales (<%= sucursales.length %>)</h2>
+        <button onclick="mostrarFormSucursal()" class="btn btn-primary">➕ Nueva Sucursal</button>
+      </div>
+
+      <!-- Formulario para crear sucursal (oculto por defecto) -->
+      <div id="form-sucursal" style="display: none; padding: 1.5rem; background: #f8f9fa; border-top: 1px solid #dee2e6; margin-top: 1rem;">
+        <h3 style="margin-bottom: 1rem;">➕ Nueva Sucursal</h3>
+        <form action="/empresas/<%= empresa.id %>/sucursales" method="POST">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="nombre">Nombre de Sucursal *</label>
+              <input type="text" id="nombre" name="nombre" required placeholder="Ej: Sucursal Centro, Casa Central">
+            </div>
+            <div class="form-group">
+              <label for="codigo">Código</label>
+              <input type="text" id="codigo" name="codigo" placeholder="SUC-001, CENTRAL">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="direccion">Dirección *</label>
+            <input type="text" id="direccion" name="direccion" required placeholder="Calle 123">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ciudad">Ciudad *</label>
+              <input type="text" id="ciudad" name="ciudad" required>
+            </div>
+            <div class="form-group">
+              <label for="provincia">Provincia *</label>
+              <input type="text" id="provincia" name="provincia" required>
+            </div>
+            <div class="form-group">
+              <label for="codigo_postal">C.P.</label>
+              <input type="text" id="codigo_postal" name="codigo_postal">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="telefono">Teléfono</label>
+              <input type="text" id="telefono" name="telefono">
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" name="es_principal"> Marcar como sucursal principal
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="observaciones">Observaciones</label>
+            <textarea id="observaciones" name="observaciones" rows="2"></textarea>
+          </div>
+
+          <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary">💾 Guardar Sucursal</button>
+            <button type="button" onclick="ocultarFormSucursal()" class="btn btn-secondary">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Lista de sucursales -->
+      <div class="detail-content">
+        <% if (sucursales.length === 0) { %>
+          <p style="text-align: center; padding: 2rem; color: #666;">
+            📭 No hay sucursales registradas
+          </p>
+        <% } else { %>
+          <% sucursales.forEach(sucursal => { %>
+            <div class="sucursal-item" style="border: 1px solid #dee2e6; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; background: <%= sucursal.es_principal ? '#e8f5e9' : 'white' %>;">
+              <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div style="flex: 1;">
+                  <h4 style="margin: 0 0 0.5rem 0;">
+                    <%= sucursal.nombre %>
+                    <% if (sucursal.codigo) { %>
+                      <span class="badge badge-secondary"><%= sucursal.codigo %></span>
+                    <% } %>
+                    <% if (sucursal.es_principal) { %>
+                      <span class="badge badge-success">⭐ Principal</span>
+                    <% } %>
+                  </h4>
+                  <p style="margin: 0.25rem 0; color: #666;">
+                    <strong>📍</strong> <%= sucursal.direccion %>, <%= sucursal.ciudad %>, <%= sucursal.provincia %>
+                    <% if (sucursal.codigo_postal) { %>
+                      (<%= sucursal.codigo_postal %>)
+                    <% } %>
+                  </p>
+                  <% if (sucursal.telefono) { %>
+                    <p style="margin: 0.25rem 0; color: #666;"><strong>📞</strong> <%= sucursal.telefono %></p>
+                  <% } %>
+                  <% if (sucursal.email) { %>
+                    <p style="margin: 0.25rem 0; color: #666;"><strong>📧</strong> <%= sucursal.email %></p>
+                  <% } %>
+                  <% if (sucursal.observaciones) { %>
+                    <p style="margin: 0.5rem 0; color: #888; font-style: italic;"><%= sucursal.observaciones %></p>
+                  <% } %>
+                </div>
+                <div>
+                  <form action="/empresas/<%= empresa.id %>/sucursales/<%= sucursal.id %>/eliminar" method="POST" style="display: inline;" onsubmit="return confirm('¿Desactivar esta sucursal?')">
+                    <button type="submit" class="btn-small btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem;">🗑️ Eliminar</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+
     <!-- Estadísticas -->
     <div class="stats-grid" style="margin-top: 2rem;">
+      <div class="stat-card">
+        <span class="stat-value"><%= sucursales.length %></span>
+        <span class="stat-label">🏪 Sucursales</span>
+      </div>
       <div class="stat-card">
         <span class="stat-value"><%= stats.total_usuarios %></span>
         <span class="stat-label">👥 Usuarios</span>
@@ -81,7 +238,7 @@
       </div>
       <div class="stat-card">
         <span class="stat-value"><%= stats.total_servidores %></span>
-        <span class="stat-label">� Servidores</span>
+        <span class="stat-label">🖧 Servidores</span>
       </div>
       <div class="stat-card">
         <span class="stat-value"><%= impresoras.length %></span>
@@ -89,7 +246,7 @@
       </div>
       <div class="stat-card">
         <span class="stat-value"><%= stats.total_visitas %></span>
-        <span class="stat-label">� Visitas</span>
+        <span class="stat-label">🚗 Visitas</span>
       </div>
     </div>
 
@@ -401,6 +558,15 @@
         tab.style.display = 'none';
       }
     });
+
+    // Funciones para sucursales
+    function mostrarFormSucursal() {
+      document.getElementById('form-sucursal').style.display = 'block';
+    }
+
+    function ocultarFormSucursal() {
+      document.getElementById('form-sucursal').style.display = 'none';
+    }
   </script>
 
   <style>

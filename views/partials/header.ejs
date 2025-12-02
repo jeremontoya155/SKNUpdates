@@ -32,6 +32,10 @@
           <li><a href="/empresas">Empresas</a></li>
         <% } %>
         
+        <% if (user.email === 'admin@skn.com') { %>
+          <li><a href="/evaluaciones" style="color: #ffc107; font-weight: bold;">🔒 Evaluaciones Internas</a></li>
+        <% } %>
+        
         <% if (user.rol === 'skn_admin' || user.rol === 'empresa_admin') { %>
           <li><a href="/usuarios">Usuarios</a></li>
         <% } %>

@@ -59,7 +59,7 @@ exports.crear = async (req, res) => {
       return res.status(403).send('Solo usuarios SKN pueden crear empresas');
     }
 
-    const { nombre, direccion, telefono, email } = req.body;
+    const { nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web } = req.body;
 
     // Verificar que no exista
     const existe = await pool.query(
@@ -76,9 +76,9 @@ exports.crear = async (req, res) => {
     }
 
     await pool.query(
-      `INSERT INTO empresas (nombre, direccion, telefono, email, activo) 
-       VALUES ($1, $2, $3, $4, true)`,
-      [nombre, direccion, telefono, email]
+      `INSERT INTO empresas (nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web, activo) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)`,
+      [nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web]
     );
 
     req.session.message = 'Empresa creada exitosamente';
@@ -164,6 +164,14 @@ exports.detalle = async (req, res) => {
       [id]
     );
 
+    // Obtener sucursales
+    const sucursales = await pool.query(
+      `SELECT * FROM sucursales 
+       WHERE empresa_id = $1 
+       ORDER BY es_principal DESC, nombre`,
+      [id]
+    );
+
     // Estadísticas generales
     const stats = await pool.query(
       `SELECT 
@@ -172,7 +180,8 @@ exports.detalle = async (req, res) => {
         (SELECT COUNT(*) FROM tickets WHERE empresa_id = $1) as total_tickets,
         (SELECT COUNT(*) FROM tickets WHERE empresa_id = $1 AND estado = 'pendiente') as tickets_pendientes,
         (SELECT COUNT(*) FROM servidores WHERE empresa_id = $1) as total_servidores,
-        (SELECT COUNT(*) FROM visitas WHERE empresa_id = $1) as total_visitas
+        (SELECT COUNT(*) FROM visitas WHERE empresa_id = $1) as total_visitas,
+        (SELECT COUNT(*) FROM sucursales WHERE empresa_id = $1) as total_sucursales
       `,
       [id]
     );
@@ -187,6 +196,7 @@ exports.detalle = async (req, res) => {
       tickets: tickets.rows,
       impresoras: impresoras.rows,
       visitas: visitas.rows,
+      sucursales: sucursales.rows,
       stats: stats.rows[0]
     });
   } catch (error) {
@@ -216,5 +226,154 @@ exports.toggleActivo = async (req, res) => {
   } catch (error) {
     console.error('Error al cambiar estado:', error);
     res.redirect('/empresas');
+  }
+};
+
+// ========== GESTIÓN DE SUCURSALES ==========
+
+// Crear sucursal
+exports.crearSucursal = async (req, res) => {
+  try {
+    const { empresa_id } = req.params;
+    const { rol } = req.session.user;
+    const esSKN = rol === 'skn_admin' || rol === 'skn_user';
+
+    if (!esSKN) {
+      return res.status(403).json({ error: 'Solo usuarios SKN pueden crear sucursales' });
+    }
+
+    const {
+      nombre,
+      codigo,
+      direccion,
+      ciudad,
+      provincia,
+      codigo_postal,
+      telefono,
+      email,
+      es_principal,
+      observaciones
+    } = req.body;
+
+    // Si es principal, desmarcar las demás
+    if (es_principal === 'on' || es_principal === true) {
+      await pool.query(
+        'UPDATE sucursales SET es_principal = false WHERE empresa_id = $1',
+        [empresa_id]
+      );
+    }
+
+    await pool.query(
+      `INSERT INTO sucursales 
+       (empresa_id, nombre, codigo, direccion, ciudad, provincia, codigo_postal, telefono, email, es_principal, observaciones) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [
+        empresa_id,
+        nombre,
+        codigo,
+        direccion,
+        ciudad,
+        provincia,
+        codigo_postal,
+        telefono,
+        email,
+        es_principal === 'on' || es_principal === true,
+        observaciones
+      ]
+    );
+
+    req.session.message = 'Sucursal creada exitosamente';
+    res.redirect(`/empresas/${empresa_id}`);
+  } catch (error) {
+    console.error('Error al crear sucursal:', error);
+    req.session.error = 'Error al crear sucursal';
+    res.redirect(`/empresas/${req.params.empresa_id}`);
+  }
+};
+
+// Editar sucursal
+exports.editarSucursal = async (req, res) => {
+  try {
+    const { empresa_id, sucursal_id } = req.params;
+    const { rol } = req.session.user;
+    const esSKN = rol === 'skn_admin' || rol === 'skn_user';
+
+    if (!esSKN) {
+      return res.status(403).json({ error: 'Solo usuarios SKN pueden editar sucursales' });
+    }
+
+    const {
+      nombre,
+      codigo,
+      direccion,
+      ciudad,
+      provincia,
+      codigo_postal,
+      telefono,
+      email,
+      es_principal,
+      observaciones
+    } = req.body;
+
+    // Si es principal, desmarcar las demás
+    if (es_principal === 'on' || es_principal === true) {
+      await pool.query(
+        'UPDATE sucursales SET es_principal = false WHERE empresa_id = $1 AND id != $2',
+        [empresa_id, sucursal_id]
+      );
+    }
+
+    await pool.query(
+      `UPDATE sucursales 
+       SET nombre = $1, codigo = $2, direccion = $3, ciudad = $4, provincia = $5, 
+           codigo_postal = $6, telefono = $7, email = $8, es_principal = $9, observaciones = $10
+       WHERE id = $11 AND empresa_id = $12`,
+      [
+        nombre,
+        codigo,
+        direccion,
+        ciudad,
+        provincia,
+        codigo_postal,
+        telefono,
+        email,
+        es_principal === 'on' || es_principal === true,
+        observaciones,
+        sucursal_id,
+        empresa_id
+      ]
+    );
+
+    req.session.message = 'Sucursal actualizada exitosamente';
+    res.redirect(`/empresas/${empresa_id}`);
+  } catch (error) {
+    console.error('Error al editar sucursal:', error);
+    req.session.error = 'Error al editar sucursal';
+    res.redirect(`/empresas/${empresa_id}`);
+  }
+};
+
+// Eliminar/desactivar sucursal
+exports.eliminarSucursal = async (req, res) => {
+  try {
+    const { empresa_id, sucursal_id } = req.params;
+    const { rol } = req.session.user;
+    const esSKN = rol === 'skn_admin' || rol === 'skn_user';
+
+    if (!esSKN) {
+      return res.status(403).json({ error: 'Solo usuarios SKN pueden eliminar sucursales' });
+    }
+
+    await pool.query(
+      'UPDATE sucursales SET activo = false WHERE id = $1 AND empresa_id = $2',
+      [sucursal_id, empresa_id]
+    );
+
+    req.session.message = 'Sucursal desactivada exitosamente';
+    res.redirect(`/empresas/${empresa_id}`);
+  } catch (error) {
+    console.error('Error al eliminar sucursal:', error);
+    req.session.error = 'Error al eliminar sucursal';
+    res.redirect(`/empresas/${empresa_id}`);
   }
 };

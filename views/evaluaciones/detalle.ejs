@@ -1,0 +1,326 @@
+<%- include('../layouts/main', { title: 'Evaluación #' + evaluacion.id + ' - SKN', body: `
+  <div class="container">
+    <div class="page-header">
+      <div>
+        <h1>🔒 Evaluación #${evaluacion.id}</h1>
+        <p class="subtitle">${evaluacion.titulo}</p>
+      </div>
+      <div style="display: flex; gap: 1rem;">
+        <a href="/evaluaciones/${evaluacion.id}/editar" class="btn btn-primary">✏️ Editar</a>
+        <a href="/evaluaciones" class="btn btn-secondary">← Volver</a>
+      </div>
+    </div>
+
+    <!-- Información del Evaluado -->
+    <div class="detail-card">
+      <div class="detail-header">
+        <h2>👤 Empleado Evaluado</h2>
+        ${evaluacion.aprobado_para_premio ? 
+          '<span class="badge badge-success" style="font-size: 1rem;">✅ APROBADO PARA PREMIO</span>' : 
+          ''
+        }
+      </div>
+      <div class="detail-content">
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>Nombre</label>
+            <p><strong>${evaluacion.usuario_nombre}</strong></p>
+          </div>
+          <div class="detail-item">
+            <label>Email</label>
+            <p>${evaluacion.usuario_email}</p>
+          </div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>Empresa</label>
+            <p>${evaluacion.empresa_nombre || 'Sin empresa'}</p>
+          </div>
+          <div class="detail-item">
+            <label>Rol</label>
+            <p><span class="badge badge-primary">${evaluacion.usuario_rol}</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información de la Evaluación -->
+    <div class="detail-card">
+      <div class="detail-header">
+        <h2>📋 Detalles de la Evaluación</h2>
+      </div>
+      <div class="detail-content">
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>Tipo</label>
+            <p><span class="badge badge-info">${evaluacion.tipo || 'general'}</span></p>
+          </div>
+          <div class="detail-item">
+            <label>Evaluador</label>
+            <p>${evaluacion.evaluador_nombre}<br><small>${evaluacion.evaluador_email}</small></p>
+          </div>
+        </div>
+
+        ${evaluacion.descripcion ? `
+          <div class="detail-row">
+            <div class="detail-item full-width">
+              <label>Descripción</label>
+              <p>${evaluacion.descripcion}</p>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>Período</label>
+            <p>
+              ${evaluacion.periodo_inicio ? new Date(evaluacion.periodo_inicio).toLocaleDateString('es-AR') : '—'}
+              hasta
+              ${evaluacion.periodo_fin ? new Date(evaluacion.periodo_fin).toLocaleDateString('es-AR') : '—'}
+            </p>
+          </div>
+          <div class="detail-item">
+            <label>Fecha de Evaluación</label>
+            <p>${new Date(evaluacion.fecha_creacion).toLocaleDateString('es-AR', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Puntajes -->
+    <div class="detail-card">
+      <div class="detail-header">
+        <h2>⭐ Puntajes</h2>
+      </div>
+      <div class="detail-content">
+        <div class="stats-grid">
+          ${evaluacion.puntaje_desempeno ? `
+            <div class="stat-card">
+              <span class="stat-value" style="color: ${getPuntajeColor(evaluacion.puntaje_desempeno)};">
+                ${evaluacion.puntaje_desempeno}/10
+              </span>
+              <span class="stat-label">💼 Desempeño</span>
+            </div>
+          ` : ''}
+
+          ${evaluacion.puntaje_actitud ? `
+            <div class="stat-card">
+              <span class="stat-value" style="color: ${getPuntajeColor(evaluacion.puntaje_actitud)};">
+                ${evaluacion.puntaje_actitud}/10
+              </span>
+              <span class="stat-label">😊 Actitud</span>
+            </div>
+          ` : ''}
+
+          ${evaluacion.puntaje_puntualidad ? `
+            <div class="stat-card">
+              <span class="stat-value" style="color: ${getPuntajeColor(evaluacion.puntaje_puntualidad)};">
+                ${evaluacion.puntaje_puntualidad}/10
+              </span>
+              <span class="stat-label">⏰ Puntualidad</span>
+            </div>
+          ` : ''}
+
+          ${evaluacion.puntaje_trabajo_equipo ? `
+            <div class="stat-card">
+              <span class="stat-value" style="color: ${getPuntajeColor(evaluacion.puntaje_trabajo_equipo)};">
+                ${evaluacion.puntaje_trabajo_equipo}/10
+              </span>
+              <span class="stat-label">👥 Trabajo en Equipo</span>
+            </div>
+          ` : ''}
+
+          ${evaluacion.puntaje_general ? `
+            <div class="stat-card" style="background: linear-gradient(135deg, ${getPuntajeColor(evaluacion.puntaje_general)}22 0%, white 100%);">
+              <span class="stat-value" style="font-size: 3rem; color: ${getPuntajeColor(evaluacion.puntaje_general)};">
+                ${evaluacion.puntaje_general}/10
+              </span>
+              <span class="stat-label"><strong>⭐ PUNTAJE GENERAL</strong></span>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+
+    <!-- Información Confidencial -->
+    <div class="detail-card" style="background: #fff3cd; border: 3px solid #ffc107;">
+      <div class="detail-header" style="background: #ffc107; color: #000;">
+        <h2>🔒 INFORMACIÓN CONFIDENCIAL</h2>
+        <span style="font-size: 0.9rem;">⚠️ Solo visible para Admin SKN</span>
+      </div>
+      <div class="detail-content">
+        ${evaluacion.notas_confidenciales ? `
+          <div class="detail-row">
+            <div class="detail-item full-width">
+              <label>📝 Notas Confidenciales</label>
+              <p style="white-space: pre-wrap; background: white; padding: 1rem; border-radius: 4px;">${evaluacion.notas_confidenciales}</p>
+            </div>
+          </div>
+        ` : ''}
+
+        ${evaluacion.contraseñas_accesos ? `
+          <div class="detail-row">
+            <div class="detail-item full-width">
+              <label>🔑 Contraseñas y Accesos</label>
+              <p style="white-space: pre-wrap; background: white; padding: 1rem; border-radius: 4px; font-family: monospace;">${evaluacion.contraseñas_accesos}</p>
+            </div>
+          </div>
+        ` : ''}
+
+        ${evaluacion.imagenes && evaluacion.imagenes.length > 0 ? `
+          <div class="detail-row">
+            <div class="detail-item full-width">
+              <label>📎 Evidencias/Archivos (${evaluacion.imagenes.length})</label>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                ${evaluacion.imagenes.map((img, index) => `
+                  <div style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white;">
+                    ${img.endsWith('.pdf') ? `
+                      <div style="padding: 2rem; text-align: center; background: #f8f9fa;">
+                        <div style="font-size: 3rem;">📄</div>
+                        <small>PDF</small>
+                      </div>
+                    ` : `
+                      <img src="${img}" alt="Evidencia ${index + 1}" style="width: 100%; height: 150px; object-fit: cover;">
+                    `}
+                    <div style="padding: 0.5rem; text-align: center;">
+                      <a href="${img}" target="_blank" class="btn-small btn-primary" style="font-size: 0.8rem;">
+                        👁️ Ver
+                      </a>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        ` : ''}
+
+        ${!evaluacion.notas_confidenciales && !evaluacion.contraseñas_accesos && (!evaluacion.imagenes || evaluacion.imagenes.length === 0) ? `
+          <p style="text-align: center; color: #666; padding: 2rem;">
+            No hay información confidencial registrada
+          </p>
+        ` : ''}
+      </div>
+    </div>
+
+    <!-- Recomendaciones y Decisiones -->
+    <div class="detail-card">
+      <div class="detail-header">
+        <h2>💡 Recomendaciones y Decisiones</h2>
+      </div>
+      <div class="detail-content">
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>Recomendación</label>
+            <p>
+              ${evaluacion.recomendacion ? `
+                <span class="badge ${
+                  evaluacion.recomendacion === 'premio' ? 'badge-success' :
+                  evaluacion.recomendacion === 'aumento' ? 'badge-success' :
+                  evaluacion.recomendacion === 'capacitacion' ? 'badge-info' :
+                  evaluacion.recomendacion === 'advertencia' ? 'badge-warning' :
+                  'badge-danger'
+                }" style="font-size: 1.1rem; padding: 0.5rem 1rem;">
+                  ${
+                    evaluacion.recomendacion === 'premio' ? '🏆 Premio/Bono' :
+                    evaluacion.recomendacion === 'aumento' ? '💰 Aumento de Sueldo' :
+                    evaluacion.recomendacion === 'capacitacion' ? '📚 Necesita Capacitación' :
+                    evaluacion.recomendacion === 'advertencia' ? '⚠️ Advertencia' :
+                    '❌ Considerar Despido'
+                  }
+                </span>
+              ` : 'Sin recomendación'}
+            </p>
+          </div>
+
+          <div class="detail-item">
+            <label>Monto Sugerido</label>
+            <p style="font-size: 1.5rem; color: #28a745; font-weight: bold;">
+              ${evaluacion.monto_sugerido ? '$' + parseFloat(evaluacion.monto_sugerido).toLocaleString('es-AR', { minimumFractionDigits: 2 }) : 'N/A'}
+            </p>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-item full-width">
+            <label>Estado de Aprobación</label>
+            <p>
+              ${evaluacion.aprobado_para_premio ? 
+                '<span class="badge badge-success" style="font-size: 1.2rem; padding: 0.7rem 1.5rem;">✅ APROBADO PARA PREMIO A FIN DE AÑO</span>' : 
+                '<span class="badge badge-secondary" style="font-size: 1rem; padding: 0.5rem 1rem;">➖ No aprobado para premio</span>'
+              }
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Acciones -->
+    <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+      <a href="/evaluaciones/${evaluacion.id}/editar" class="btn btn-primary">✏️ Editar Evaluación</a>
+      <form action="/evaluaciones/${evaluacion.id}/eliminar" method="POST" style="display: inline;" 
+            onsubmit="return confirm('¿Está seguro de eliminar esta evaluación? Esta acción no se puede deshacer.')">
+        <button type="submit" class="btn btn-danger">🗑️ Eliminar</button>
+      </form>
+      <a href="/evaluaciones" class="btn btn-secondary">← Volver al Listado</a>
+    </div>
+  </div>
+
+  <script>
+    function getPuntajeColor(puntaje) {
+      if (puntaje >= 8) return '#28a745'; // Verde
+      if (puntaje >= 6) return '#ffc107'; // Amarillo
+      return '#dc3545'; // Rojo
+    }
+  </script>
+
+  <style>
+    .detail-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .detail-header {
+      background: var(--primary-color);
+      color: white;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .detail-content {
+      padding: 1.5rem;
+    }
+
+    .detail-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .detail-item label {
+      display: block;
+      font-weight: bold;
+      color: #666;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .detail-item p {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .detail-item.full-width {
+      grid-column: 1 / -1;
+    }
+  </style>
+` }) %>
