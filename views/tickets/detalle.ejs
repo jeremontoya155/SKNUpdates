@@ -183,6 +183,67 @@
         </form>
       </div>
     </div>
+
+    <!-- Imágenes -->
+    <div class="detail-card" style="margin-top: 2rem;">
+      <div class="detail-header">
+        <h3>📸 Imágenes del Error</h3>
+      </div>
+      
+      <div class="detail-content">
+        <% if (imagenes.length === 0) { %>
+          <p style="color: #666; text-align: center; padding: 1rem;">No hay imágenes adjuntas</p>
+        <% } else { %>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <% imagenes.forEach(img => { %>
+              <div style="border: 1px solid #ddd; border-radius: 8px; padding: 0.5rem; background: #f9f9f9;">
+                <a href="<%= img.ruta_archivo %>" target="_blank">
+                  <img src="<%= img.ruta_archivo %>" alt="<%= img.nombre_archivo %>" 
+                       style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; cursor: pointer;">
+                </a>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem; color: #666;">
+                  📎 <%= img.nombre_archivo.length > 20 ? img.nombre_archivo.substring(0, 20) + '...' : img.nombre_archivo %>
+                </p>
+                <p style="margin: 0.25rem 0; font-size: 0.75rem; color: #999;">
+                  Por: <%= img.subido_por_nombre %><br>
+                  <%= new Date(img.fecha_subida).toLocaleDateString('es-AR') %>
+                </p>
+                <% if (img.descripcion) { %>
+                  <p style="margin: 0.25rem 0; font-size: 0.75rem; font-style: italic;"><%= img.descripcion %></p>
+                <% } %>
+                <% if (esSKN || img.subido_por === user.id) { %>
+                  <form action="/tickets/<%= ticket.id %>/imagen/<%= img.id %>/eliminar" method="POST" style="margin-top: 0.5rem;">
+                    <button type="submit" class="btn btn-danger" style="width: 100%; font-size: 0.8rem; padding: 0.3rem;" 
+                            onclick="return confirm('¿Eliminar esta imagen?')">
+                      🗑️ Eliminar
+                    </button>
+                  </form>
+                <% } %>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+
+        <!-- Formulario para subir nueva imagen -->
+        <form action="/tickets/<%= ticket.id %>/imagen" method="POST" enctype="multipart/form-data" 
+              style="border-top: 1px solid #ddd; padding-top: 1.5rem; margin-top: 1rem;">
+          <div class="form-group">
+            <label for="imagen">📤 Subir Nueva Imagen</label>
+            <input type="file" id="imagen" name="imagen" accept="image/*" required 
+                   style="display: block; width: 100%; padding: 0.5rem; border: 2px dashed #ccc; border-radius: 4px;">
+            <p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+              Formatos: JPG, PNG, GIF, WEBP • Tamaño máximo: 5MB
+            </p>
+          </div>
+          <div class="form-group">
+            <label for="descripcion">Descripción (opcional)</label>
+            <input type="text" id="descripcion" name="descripcion" maxlength="255" 
+                   placeholder="Ej: Error en la pantalla principal">
+          </div>
+          <button type="submit" class="btn btn-primary">📸 Subir Imagen</button>
+        </form>
+      </div>
+    </div>
   </main>
 
   <%- include('../partials/footer') %>

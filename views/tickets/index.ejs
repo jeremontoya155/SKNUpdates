@@ -33,6 +33,64 @@
       </div>
     <% } %>
 
+    <!-- Filtros de búsqueda -->
+    <div class="search-filters">
+      <form method="GET" action="/tickets" class="search-form">
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" name="buscar" placeholder="🔍 Buscar por título o descripción..." 
+                   value="<%= filtros?.buscar || '' %>" class="search-input">
+          </div>
+
+          <div class="form-group">
+            <select name="estado" class="filter-select">
+              <option value="">📋 Todos los estados</option>
+              <option value="abierto" <%= filtros?.estado === 'abierto' ? 'selected' : '' %>>⏳ Abierto</option>
+              <option value="en_proceso" <%= filtros?.estado === 'en_proceso' ? 'selected' : '' %>>🔄 En Proceso</option>
+              <option value="cerrado" <%= filtros?.estado === 'cerrado' ? 'selected' : '' %>>✅ Cerrado</option>
+              <option value="cancelado" <%= filtros?.estado === 'cancelado' ? 'selected' : '' %>>⛔ Cancelado</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <select name="prioridad" class="filter-select">
+              <option value="">🎯 Todas las prioridades</option>
+              <option value="baja" <%= filtros?.prioridad === 'baja' ? 'selected' : '' %>>🟢 Baja</option>
+              <option value="media" <%= filtros?.prioridad === 'media' ? 'selected' : '' %>>🟡 Media</option>
+              <option value="alta" <%= filtros?.prioridad === 'alta' ? 'selected' : '' %>>🟠 Alta</option>
+              <option value="urgente" <%= filtros?.prioridad === 'urgente' ? 'selected' : '' %>>🔴 Urgente</option>
+            </select>
+          </div>
+
+          <% if (esSKN && empresas && empresas.length > 0) { %>
+            <div class="form-group">
+              <select name="empresa" class="filter-select">
+                <option value="">🏢 Todas las empresas</option>
+                <% empresas.forEach(emp => { %>
+                  <option value="<%= emp.id %>" <%= filtros?.empresa == emp.id ? 'selected' : '' %>>
+                    <%= emp.nombre %>
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+          <% } %>
+
+          <div class="form-group">
+            <input type="date" name="fecha_desde" placeholder="Desde" 
+                   value="<%= filtros?.fecha_desde || '' %>" class="filter-input">
+          </div>
+
+          <div class="form-group">
+            <input type="date" name="fecha_hasta" placeholder="Hasta" 
+                   value="<%= filtros?.fecha_hasta || '' %>" class="filter-input">
+          </div>
+
+          <button type="submit" class="btn btn-primary">🔍 Buscar</button>
+          <a href="/tickets" class="btn btn-secondary">🔄 Limpiar</a>
+        </div>
+      </form>
+    </div>
+
     <% if (tickets.length === 0) { %>
       <div class="empty-state">
         <p>📭 No hay tickets registrados</p>

@@ -7,9 +7,11 @@ exports.index = async (req, res) => {
   try {
     const { rol, empresa_id } = req.session.user;
     const esSKN = rol === 'skn_admin' || rol === 'skn_user';
+    const { buscar, empresa, fecha_desde, fecha_hasta } = req.query;
 
     let query;
     let params = [];
+    let paramIndex = 1;
 
     if (esSKN) {
       // SKN ve todos los contadores con datos de empresa
@@ -25,8 +27,15 @@ exports.index = async (req, res) => {
         JOIN materiales m ON ic.material_id = m.id
         JOIN empresas e ON m.empresa_id = e.id
         LEFT JOIN usuarios u ON ic.registrado_por = u.id
-        ORDER BY ic.fecha_lectura DESC, e.nombre, m.nombre
+        WHERE 1=1
       `;
+
+      // Filtro por empresa
+      if (empresa) {
+        query += ` AND m.empresa_id = $${paramIndex}`;
+        params.push(parseInt(empresa, 10));
+        paramIndex++;
+      }
     } else {
       // Empresa solo ve sus propios contadores
       query = `
@@ -39,18 +48,56 @@ exports.index = async (req, res) => {
         FROM impresoras_contadores ic
         JOIN materiales m ON ic.material_id = m.id
         LEFT JOIN usuarios u ON ic.registrado_por = u.id
-        WHERE m.empresa_id = $1
-        ORDER BY ic.fecha_lectura DESC, m.nombre
+        WHERE m.empresa_id = $${paramIndex}
       `;
       params = [empresa_id];
+      paramIndex++;
+    }
+
+    // Filtro por búsqueda
+    if (buscar) {
+      query += ` AND (LOWER(m.nombre) LIKE LOWER($${paramIndex}) OR LOWER(m.marca) LIKE LOWER($${paramIndex}) OR LOWER(m.modelo) LIKE LOWER($${paramIndex}))`;
+      params.push(`%${buscar}%`);
+      paramIndex++;
+    }
+
+    // Filtro por fecha desde
+    if (fecha_desde) {
+      query += ` AND ic.fecha_lectura >= $${paramIndex}`;
+      params.push(fecha_desde);
+      paramIndex++;
+    }
+
+    // Filtro por fecha hasta
+    if (fecha_hasta) {
+      query += ` AND ic.fecha_lectura <= $${paramIndex}::date + interval '1 day'`;
+      params.push(fecha_hasta);
+      paramIndex++;
+    }
+
+    if (esSKN) {
+      query += ` ORDER BY ic.fecha_lectura DESC, e.nombre, m.nombre`;
+    } else {
+      query += ` ORDER BY ic.fecha_lectura DESC, m.nombre`;
     }
 
     const result = await pool.query(query, params);
+
+    // Obtener lista de empresas para SKN
+    let empresas = [];
+    if (esSKN) {
+      const empresasResult = await pool.query(
+        'SELECT id, nombre FROM empresas WHERE activo = true ORDER BY nombre'
+      );
+      empresas = empresasResult.rows;
+    }
 
     res.render('contadores/index', {
       title: 'Contadores de Impresoras',
       user: req.session.user,
       contadores: result.rows,
+      empresas,
+      filtros: { buscar, empresa, fecha_desde, fecha_hasta },
       esSKN
     });
   } catch (error) {

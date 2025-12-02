@@ -6,11 +6,11 @@ const { isAuthenticated, isSKNUser, canEditInventory } = require('./middleware')
 // Listar servidores - todos autenticados pueden ver
 router.get('/', isAuthenticated, servidoresController.index);
 
-// Ver detalle
-router.get('/:id', isAuthenticated, servidoresController.detalle);
-
-// Crear - solo admins
+// Crear - solo admins (DEBE IR ANTES de /:id)
 router.get('/nuevo', canEditInventory, servidoresController.showNuevo);
 router.post('/nuevo', canEditInventory, servidoresController.crear);
+
+// Ver detalle (DEBE IR DESPUÉS de /nuevo)
+router.get('/:id', isAuthenticated, servidoresController.detalle);
 
 module.exports = router;

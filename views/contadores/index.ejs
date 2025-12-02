@@ -27,6 +27,44 @@
       </div>
     <% } %>
 
+    <!-- Filtros de búsqueda -->
+    <div class="search-filters">
+      <form method="GET" action="/contadores" class="search-form">
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" name="buscar" placeholder="🔍 Buscar por impresora o modelo..." 
+                   value="<%= filtros?.buscar || '' %>" class="search-input">
+          </div>
+
+          <% if (esSKN && empresas && empresas.length > 0) { %>
+            <div class="form-group">
+              <select name="empresa" class="filter-select">
+                <option value="">🏢 Todas las empresas</option>
+                <% empresas.forEach(emp => { %>
+                  <option value="<%= emp.id %>" <%= filtros?.empresa == emp.id ? 'selected' : '' %>>
+                    <%= emp.nombre %>
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+          <% } %>
+
+          <div class="form-group">
+            <input type="date" name="fecha_desde" placeholder="Desde" 
+                   value="<%= filtros?.fecha_desde || '' %>" class="filter-input">
+          </div>
+
+          <div class="form-group">
+            <input type="date" name="fecha_hasta" placeholder="Hasta" 
+                   value="<%= filtros?.fecha_hasta || '' %>" class="filter-input">
+          </div>
+
+          <button type="submit" class="btn btn-primary">🔍 Buscar</button>
+          <a href="/contadores" class="btn btn-secondary">🔄 Limpiar</a>
+        </div>
+      </form>
+    </div>
+
     <% if (contadores.length === 0) { %>
       <div class="empty-state">
         <p>📭 No hay contadores registrados</p>

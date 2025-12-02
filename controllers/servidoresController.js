@@ -6,21 +6,26 @@ const servidoresController = {
     try {
       const user = req.session.user;
       let query = 'SELECT * FROM servidores WHERE activo = true';
-      let params = [];
-      
+      const params = [];
+
       // SKN ve todos, empresas solo los suyos
       if (user.rol === 'empresa_admin' || user.rol === 'empresa_user') {
+        // Seguridad: asegurar que exista empresa_id en sesión
+        if (!user.empresa_id) {
+          req.session.error = 'No se pudo determinar la empresa del usuario';
+          return res.render('servidores/index', { title: 'Servidores', servidores: [] });
+        }
         query += ' AND empresa_id = $1';
-        params.push(user.empresa_id);
+        params.push(parseInt(user.empresa_id, 10));
       }
-      
+
       query += ' ORDER BY tipo, nombre';
-      
+
       const result = await db.query(query, params);
-      
-      res.render('servidores/index', { 
-        title: 'Servidores', 
-        servidores: result.rows 
+
+      res.render('servidores/index', {
+        title: 'Servidores',
+        servidores: result.rows
       });
     } catch (error) {
       console.error('Error al listar servidores:', error);
@@ -64,7 +69,17 @@ const servidoresController = {
       // Determinar empresa_id
       let empresaId = empresa_id;
       if (user.rol === 'empresa_admin' || user.rol === 'empresa_user') {
+        if (!user.empresa_id) {
+          req.session.error = 'No se pudo determinar la empresa del usuario';
+          return res.redirect('/servidores/nuevo');
+        }
         empresaId = user.empresa_id;
+      }
+      
+      // Validar que empresaId existe
+      if (!empresaId) {
+        req.session.error = 'Debe especificar una empresa';
+        return res.redirect('/servidores/nuevo');
       }
       
       await db.query(

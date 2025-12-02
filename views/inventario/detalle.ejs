@@ -42,35 +42,37 @@
       <p><strong>Precio Unitario:</strong> $<%= parseFloat(material.precio_unitario).toFixed(2) %></p>
     </div>
 
-    <div class="movimiento-form">
-      <h3>Registrar Movimiento</h3>
-      <form action="/inventario/movimiento" method="POST">
-        <input type="hidden" name="material_id" value="<%= material.id %>">
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="tipo_movimiento">Tipo de Movimiento</label>
-            <select id="tipo_movimiento" name="tipo_movimiento" required>
-              <option value="entrada">Entrada</option>
-              <option value="salida">Salida</option>
-              <option value="ajuste">Ajuste</option>
-            </select>
+    <% if (user.rol === 'skn_admin' || user.rol === 'empresa_admin') { %>
+      <div class="movimiento-form">
+        <h3>Registrar Movimiento</h3>
+        <form action="/inventario/movimiento" method="POST">
+          <input type="hidden" name="material_id" value="<%= material.id %>">
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="tipo_movimiento">Tipo de Movimiento</label>
+              <select id="tipo_movimiento" name="tipo_movimiento" required>
+                <option value="entrada">Entrada</option>
+                <option value="salida">Salida</option>
+                <option value="ajuste">Ajuste</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="cantidad">Cantidad</label>
+              <input type="number" id="cantidad" name="cantidad" required min="1">
+            </div>
           </div>
 
           <div class="form-group">
-            <label for="cantidad">Cantidad</label>
-            <input type="number" id="cantidad" name="cantidad" required min="1">
+            <label for="motivo">Motivo</label>
+            <textarea id="motivo" name="motivo" rows="2" required></textarea>
           </div>
-        </div>
 
-        <div class="form-group">
-          <label for="motivo">Motivo</label>
-          <textarea id="motivo" name="motivo" rows="2" required></textarea>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Registrar Movimiento</button>
-      </form>
-    </div>
+          <button type="submit" class="btn btn-primary">Registrar Movimiento</button>
+        </form>
+      </div>
+    <% } %>
 
     <div class="movimientos-historia">
       <h3>Historial de Movimientos</h3>

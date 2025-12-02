@@ -23,6 +23,41 @@
       <a href="/visitas/nuevo" class="btn btn-primary">+ Nueva Visita</a>
     </div>
 
+    <!-- Filtros de búsqueda -->
+    <div class="search-filters">
+      <form method="GET" action="/visitas" class="search-form">
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" name="buscar" placeholder="🔍 Buscar por visitante o empresa..." 
+                   value="<%= filtros?.buscar || '' %>" class="search-input">
+          </div>
+
+          <div class="form-group">
+            <select name="estado" class="filter-select">
+              <option value="">📋 Todos los estados</option>
+              <option value="pendiente" <%= filtros?.estado === 'pendiente' ? 'selected' : '' %>>⏳ Pendiente</option>
+              <option value="en_curso" <%= filtros?.estado === 'en_curso' ? 'selected' : '' %>>🔄 En Curso</option>
+              <option value="finalizada" <%= filtros?.estado === 'finalizada' ? 'selected' : '' %>>✅ Finalizada</option>
+              <option value="cancelada" <%= filtros?.estado === 'cancelada' ? 'selected' : '' %>>❌ Cancelada</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <input type="date" name="fecha_desde" placeholder="Desde" 
+                   value="<%= filtros?.fecha_desde || '' %>" class="filter-input">
+          </div>
+
+          <div class="form-group">
+            <input type="date" name="fecha_hasta" placeholder="Hasta" 
+                   value="<%= filtros?.fecha_hasta || '' %>" class="filter-input">
+          </div>
+
+          <button type="submit" class="btn btn-primary">🔍 Buscar</button>
+          <a href="/visitas" class="btn btn-secondary">🔄 Limpiar</a>
+        </div>
+      </form>
+    </div>
+
     <table>
       <thead>
         <tr>

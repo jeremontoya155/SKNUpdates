@@ -5,19 +5,62 @@ const visitasController = {
   index: async (req, res) => {
     try {
       const user = req.session.user;
-      const result = await db.query(
-        `SELECT v.*, u.nombre as visitado_nombre 
-         FROM visitas v 
-         LEFT JOIN usuarios u ON v.usuario_visitado = u.id 
-         WHERE v.empresa_id = $1 
-         ORDER BY v.fecha_visita DESC`,
-        [user.empresa_id]
-      );
+      const { buscar, estado, fecha_desde, fecha_hasta } = req.query;
 
-      res.render('visitas/index', { title: 'Visitas', visitas: result.rows });
+      let query = `
+        SELECT v.*, u.nombre as visitado_nombre 
+        FROM visitas v 
+        LEFT JOIN usuarios u ON v.usuario_visitado = u.id 
+        WHERE v.empresa_id = $1
+      `;
+      
+      const params = [user.empresa_id];
+      let paramIndex = 2;
+
+      // Filtro por búsqueda
+      if (buscar) {
+        query += ` AND (LOWER(v.visitante_nombre) LIKE LOWER($${paramIndex}) OR LOWER(v.visitante_empresa) LIKE LOWER($${paramIndex}))`;
+        params.push(`%${buscar}%`);
+        paramIndex++;
+      }
+
+      // Filtro por estado
+      if (estado) {
+        query += ` AND v.estado = $${paramIndex}`;
+        params.push(estado);
+        paramIndex++;
+      }
+
+      // Filtro por fecha desde
+      if (fecha_desde) {
+        query += ` AND v.fecha_visita >= $${paramIndex}`;
+        params.push(fecha_desde);
+        paramIndex++;
+      }
+
+      // Filtro por fecha hasta
+      if (fecha_hasta) {
+        query += ` AND v.fecha_visita <= $${paramIndex}::date + interval '1 day'`;
+        params.push(fecha_hasta);
+        paramIndex++;
+      }
+
+      query += ` ORDER BY v.fecha_visita DESC`;
+
+      const result = await db.query(query, params);
+
+      res.render('visitas/index', { 
+        title: 'Visitas', 
+        visitas: result.rows,
+        filtros: { buscar, estado, fecha_desde, fecha_hasta }
+      });
     } catch (error) {
       console.error('Error al listar visitas:', error);
-      res.render('visitas/index', { title: 'Visitas', visitas: [] });
+      res.render('visitas/index', { 
+        title: 'Visitas', 
+        visitas: [],
+        filtros: {}
+      });
     }
   },
 

@@ -23,37 +23,39 @@
       <a href="/inventario" class="btn btn-secondary">Volver a Inventario</a>
     </div>
 
-    <div class="categoria-form">
-      <h3>➕ Nueva Categoría</h3>
-      <form action="/inventario/categorias" method="POST">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="nombre">Nombre *</label>
-            <input type="text" id="nombre" name="nombre" required placeholder="Ej: Notebooks, Impresoras">
+    <% if (user.rol === 'skn_admin' || user.rol === 'empresa_admin') { %>
+      <div class="categoria-form">
+        <h3>➕ Nueva Categoría</h3>
+        <form action="/inventario/categorias" method="POST">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="nombre">Nombre *</label>
+              <input type="text" id="nombre" name="nombre" required placeholder="Ej: Notebooks, Impresoras">
+            </div>
+
+            <div class="form-group">
+              <label for="descripcion">Descripción</label>
+              <input type="text" id="descripcion" name="descripcion" placeholder="Descripción de la categoría">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="codigo_prefijo">Prefijo de Código</label>
+              <input type="text" id="codigo_prefijo" name="codigo_prefijo" placeholder="Ej: NB, IMP, PC" maxlength="10">
+              <small>Se usará para generar códigos automáticos: NB-001, IMP-002, etc.</small>
+            </div>
+
+            <div class="form-group">
+              <label for="icono">Icono (emoji o texto)</label>
+              <input type="text" id="icono" name="icono" placeholder="💻 📱 🖨️" maxlength="5">
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="descripcion">Descripción</label>
-            <input type="text" id="descripcion" name="descripcion" placeholder="Descripción de la categoría">
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="codigo_prefijo">Prefijo de Código</label>
-            <input type="text" id="codigo_prefijo" name="codigo_prefijo" placeholder="Ej: NB, IMP, PC" maxlength="10">
-            <small>Se usará para generar códigos automáticos: NB-001, IMP-002, etc.</small>
-          </div>
-
-          <div class="form-group">
-            <label for="icono">Icono (emoji o texto)</label>
-            <input type="text" id="icono" name="icono" placeholder="💻 📱 🖨️" maxlength="5">
-          </div>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Crear Categoría</button>
-      </form>
-    </div>
+          <button type="submit" class="btn btn-primary">Crear Categoría</button>
+        </form>
+      </div>
+    <% } %>
 
     <div class="table-responsive">
       <table>
@@ -88,13 +90,17 @@
                 <% } %>
               </td>
               <td>
-                <button onclick="editarCategoria(<%= cat.id %>, '<%= cat.nombre %>', '<%= cat.descripcion || '' %>', '<%= cat.codigo_prefijo || '' %>', '<%= cat.icono || '' %>')" 
-                        class="btn-small btn-warning">✏️ Editar</button>
+                <% if (user.rol === 'skn_admin' || user.rol === 'empresa_admin') { %>
+                  <button onclick="editarCategoria(<%= cat.id %>, '<%= cat.nombre %>', '<%= cat.descripcion || '' %>', '<%= cat.codigo_prefijo || '' %>', '<%= cat.icono || '' %>')" 
+                          class="btn-small btn-warning">✏️ Editar</button>
+                <% } %>
                 <a href="/inventario/categorias/<%= cat.id %>/atributos" class="btn-small">📋 Atributos</a>
-                <% if (cat.activo) { %>
-                  <button onclick="toggleCategoria(<%= cat.id %>, false)" class="btn-small btn-danger">🚫 Desactivar</button>
-                <% } else { %>
-                  <button onclick="toggleCategoria(<%= cat.id %>, true)" class="btn-small btn-success">✅ Activar</button>
+                <% if (user.rol === 'skn_admin' || user.rol === 'empresa_admin') { %>
+                  <% if (cat.activo) { %>
+                    <button onclick="toggleCategoria(<%= cat.id %>, false)" class="btn-small btn-danger">🚫 Desactivar</button>
+                  <% } else { %>
+                    <button onclick="toggleCategoria(<%= cat.id %>, true)" class="btn-small btn-success">✅ Activar</button>
+                  <% } %>
                 <% } %>
               </td>
             </tr>

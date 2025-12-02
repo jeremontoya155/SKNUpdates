@@ -23,13 +23,17 @@ const inventarioController = {
         // SKN puede filtrar por empresa específica o ver todas
         if (empresa && empresa !== 'todas') {
           query += ` AND m.empresa_id = $${paramIndex}`;
-          params.push(empresa);
+          params.push(parseInt(empresa, 10));
           paramIndex++;
         }
       } else {
         // Empresas solo ven sus materiales
+        if (!user.empresa_id) {
+          req.session.error = 'No se pudo determinar la empresa del usuario';
+          return res.render('inventario/index', { title: 'Inventario', materiales: [], categorias: [], empresas: [], filtros: {} });
+        }
         query += ` AND m.empresa_id = $${paramIndex}`;
-        params.push(user.empresa_id);
+        params.push(parseInt(user.empresa_id, 10));
         paramIndex++;
       }
 
@@ -49,9 +53,9 @@ const inventarioController = {
 
       // Filtro por stock
       if (stock === 'bajo') {
-        query += ` AND m.cantidad_actual <= m.stock_minimo`;
+        query += ` AND m.stock_actual <= m.stock_minimo`;
       } else if (stock === 'agotado') {
-        query += ` AND m.cantidad_actual = 0`;
+        query += ` AND m.stock_actual = 0`;
       }
 
       query += ` ORDER BY m.nombre`;
@@ -95,6 +99,13 @@ const inventarioController = {
   showNuevo: async (req, res) => {
     try {
       const user = req.session.user;
+      
+      // Validación para empresas
+      if ((user.rol === 'empresa_admin' || user.rol === 'empresa_user') && !user.empresa_id) {
+        req.session.error = 'No se pudo determinar la empresa del usuario';
+        return res.redirect('/inventario');
+      }
+      
       const categorias = await db.query(
         'SELECT * FROM categorias_materiales WHERE empresa_id = $1 AND activo = true ORDER BY nombre',
         [user.empresa_id]
@@ -129,6 +140,12 @@ const inventarioController = {
     const user = req.session.user;
 
     try {
+      // Validación de empresa_id
+      if (!user.empresa_id) {
+        req.session.error = 'No se pudo determinar la empresa del usuario';
+        return res.redirect('/inventario/nuevo');
+      }
+      
       // Insertar material con marca y modelo
       const materialResult = await db.query(
         `INSERT INTO materiales (empresa_id, categoria_id, nombre, marca, modelo, descripcion, codigo, stock_actual, stock_minimo, precio_unitario, unidad_medida) 
@@ -169,13 +186,25 @@ const inventarioController = {
 
     try {
       // Obtener material
-      const material = await db.query(
-        `SELECT m.*, c.nombre as categoria_nombre 
-         FROM materiales m 
-         LEFT JOIN categorias_materiales c ON m.categoria_id = c.id 
-         WHERE m.id = $1 AND m.empresa_id = $2`,
-        [id, user.empresa_id]
-      );
+      let material;
+      if (user.rol === 'skn_admin' || user.rol === 'skn_user') {
+        material = await db.query(
+          `SELECT m.*, c.nombre as categoria_nombre
+           FROM materiales m
+           LEFT JOIN categorias_materiales c ON m.categoria_id = c.id
+           WHERE m.id = $1`,
+          [id]
+        );
+      } else {
+        // Empresas solo pueden ver sus materiales
+        material = await db.query(
+          `SELECT m.*, c.nombre as categoria_nombre
+           FROM materiales m
+           LEFT JOIN categorias_materiales c ON m.categoria_id = c.id
+           WHERE m.id = $1 AND m.empresa_id = $2`,
+          [id, user.empresa_id]
+        );
+      }
 
       if (material.rows.length === 0) {
         return res.status(404).send('Material no encontrado');
@@ -220,14 +249,27 @@ const inventarioController = {
     const user = req.session.user;
 
     try {
-      // Obtener stock actual
-      const material = await db.query(
-        'SELECT stock_actual FROM materiales WHERE id = $1 AND empresa_id = $2',
-        [material_id, user.empresa_id]
-      );
+      // Verificar empresa_id en sesión
+      if ((user.rol === 'empresa_admin' || user.rol === 'empresa_user') && !user.empresa_id) {
+        return res.status(403).json({ error: 'No se pudo determinar la empresa del usuario' });
+      }
+
+      // Obtener stock actual (SKN puede mover cualquier material, empresas solo los suyos)
+      let material;
+      if (user.rol === 'skn_admin' || user.rol === 'skn_user') {
+        material = await db.query(
+          'SELECT stock_actual, empresa_id FROM materiales WHERE id = $1',
+          [material_id]
+        );
+      } else {
+        material = await db.query(
+          'SELECT stock_actual, empresa_id FROM materiales WHERE id = $1 AND empresa_id = $2',
+          [material_id, user.empresa_id]
+        );
+      }
 
       if (material.rows.length === 0) {
-        return res.status(404).json({ error: 'Material no encontrado' });
+        return res.status(404).json({ error: 'Material no encontrado o sin permisos' });
       }
 
       const stockAnterior = parseInt(material.rows[0].stock_actual);
@@ -268,6 +310,13 @@ const inventarioController = {
   categorias: async (req, res) => {
     try {
       const user = req.session.user;
+      
+      // Validación de empresa_id
+      if (!user.empresa_id) {
+        req.session.error = 'No se pudo determinar la empresa del usuario';
+        return res.render('inventario/categorias', { title: 'Categorías', categorias: [] });
+      }
+      
       const result = await db.query(
         'SELECT * FROM categorias_materiales WHERE empresa_id = $1 ORDER BY nombre',
         [user.empresa_id]
@@ -346,6 +395,12 @@ const inventarioController = {
     const user = req.session.user;
 
     try {
+      // Validación de empresa_id
+      if (!user.empresa_id) {
+        req.session.error = 'No se pudo determinar la empresa del usuario';
+        return res.redirect('/inventario/categorias');
+      }
+      
       // Verificar que la categoría pertenece a la empresa
       const categoria = await db.query(
         'SELECT * FROM categorias_materiales WHERE id = $1 AND empresa_id = $2',
@@ -353,7 +408,8 @@ const inventarioController = {
       );
 
       if (categoria.rows.length === 0) {
-        return res.status(404).send('Categoría no encontrada');
+        req.session.error = 'Categoría no encontrada o sin permisos';
+        return res.redirect('/inventario/categorias');
       }
 
       // Obtener atributos de la categoría
