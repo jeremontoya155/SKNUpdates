@@ -1,4 +1,5 @@
 const db = require('../database');
+const { deleteImage, getThumbnailUrl, getPreviewUrl } = require('../config/cloudinary');
 
 const ticketsController = {
   // Listar tickets
@@ -143,9 +144,15 @@ const ticketsController = {
         empresas = result.rows;
       }
 
+      // Obtener tipos de trabajo activos
+      const tiposTrabajo = await db.query(
+        'SELECT id, nombre, descripcion, requiere_instalacion FROM tipos_trabajo WHERE activo = true ORDER BY nombre'
+      );
+
       res.render('tickets/nuevo', { 
         title: 'Nuevo Ticket',
         empresas,
+        tiposTrabajo: tiposTrabajo.rows,
         esSKN,
         user,
         error: null
@@ -158,11 +165,18 @@ const ticketsController = {
 
   // Crear ticket
   crear: async (req, res) => {
-    const { titulo, descripcion, prioridad, empresa_id } = req.body;
+    const { titulo, descripcion, prioridad, empresa_id, tipo_soporte, tipo_trabajo_id } = req.body;
     const user = req.session.user;
     const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user';
+    const file = req.file; // Imagen inicial
 
     try {
+      // Validación: Si es soporte físico, la imagen es OBLIGATORIA
+      if (tipo_soporte === 'fisico' && !file) {
+        req.session.error = 'Para tickets de soporte físico es obligatorio adjuntar una imagen del problema';
+        return res.redirect('/tickets/nuevo');
+      }
+
       let empresaFinal;
       
       if (esSKN) {
@@ -173,11 +187,26 @@ const ticketsController = {
         empresaFinal = user.empresa_id;
       }
 
-      await db.query(
-        `INSERT INTO tickets (empresa_id, usuario_solicitante, titulo, descripcion, prioridad, estado) 
-         VALUES ($1, $2, $3, $4, $5, 'abierto')`,
-        [empresaFinal, user.id, titulo, descripcion, prioridad || 'media']
+      // Insertar ticket con tipo de soporte y tipo de trabajo
+      const ticketResult = await db.query(
+        `INSERT INTO tickets (empresa_id, usuario_solicitante, titulo, descripcion, prioridad, estado, tipo_soporte, tipo_trabajo_id) 
+         VALUES ($1, $2, $3, $4, $5, 'abierto', $6, $7) RETURNING id`,
+        [empresaFinal, user.id, titulo, descripcion, prioridad || 'media', tipo_soporte || 'remoto', tipo_trabajo_id || null]
       );
+
+      const ticketId = ticketResult.rows[0].id;
+
+      // Si hay imagen inicial, guardarla
+      if (file) {
+        const ruta = file.path; // URL de Cloudinary
+        const publicId = file.filename; // Public ID de Cloudinary
+        
+        await db.query(
+          `INSERT INTO tickets_imagenes (ticket_id, nombre_archivo, ruta_archivo, mime_type, tamanio, subido_por, descripcion, cloudinary_id, tipo_imagen)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'inicial')`,
+          [ticketId, file.originalname, ruta, file.mimetype, file.size, user.id, 'Imagen inicial del problema', publicId]
+        );
+      }
 
       req.session.message = 'Ticket creado exitosamente';
       res.redirect('/tickets');
@@ -205,11 +234,15 @@ const ticketsController = {
             t.*, 
             e.nombre as empresa_nombre,
             u.nombre as solicitante_nombre, 
-            ua.nombre as asignado_nombre 
+            ua.nombre as asignado_nombre,
+            tt.nombre as tipo_trabajo_nombre,
+            tt.descripcion as tipo_trabajo_descripcion,
+            tt.color as tipo_trabajo_color
           FROM tickets t 
           JOIN empresas e ON t.empresa_id = e.id
           LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
           LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
+          LEFT JOIN tipos_trabajo tt ON t.tipo_trabajo_id = tt.id
           WHERE t.id = $1
         `;
         params = [id];
@@ -219,10 +252,14 @@ const ticketsController = {
           SELECT 
             t.*, 
             u.nombre as solicitante_nombre, 
-            ua.nombre as asignado_nombre 
+            ua.nombre as asignado_nombre,
+            tt.nombre as tipo_trabajo_nombre,
+            tt.descripcion as tipo_trabajo_descripcion,
+            tt.color as tipo_trabajo_color
           FROM tickets t 
           LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
           LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
+          LEFT JOIN tipos_trabajo tt ON t.tipo_trabajo_id = tt.id
           WHERE t.id = $1 AND t.empresa_id = $2
         `;
         params = [id, user.empresa_id];
@@ -394,6 +431,7 @@ const ticketsController = {
     const { id } = req.params;
     const user = req.session.user;
     const file = req.file;
+    const { tipo_imagen, descripcion } = req.body;
 
     try {
       if (!file) {
@@ -407,10 +445,10 @@ const ticketsController = {
       let ticketParams;
 
       if (esSKN) {
-        ticketQuery = 'SELECT id FROM tickets WHERE id = $1';
+        ticketQuery = 'SELECT id, tipo_soporte FROM tickets WHERE id = $1';
         ticketParams = [id];
       } else {
-        ticketQuery = 'SELECT id FROM tickets WHERE id = $1 AND empresa_id = $2';
+        ticketQuery = 'SELECT id, tipo_soporte FROM tickets WHERE id = $1 AND empresa_id = $2';
         ticketParams = [id, user.empresa_id];
       }
 
@@ -421,13 +459,24 @@ const ticketsController = {
         return res.redirect('/tickets');
       }
 
+      const ticket = ticketResult.rows[0];
+
+      // Validar tipo de imagen según tipo de soporte
+      const tipoImagenFinal = tipo_imagen || 'general';
+      if (ticket.tipo_soporte === 'remoto' && ['antes', 'durante', 'despues'].includes(tipoImagenFinal)) {
+        req.session.error = 'Solo los tickets de soporte físico pueden tener imágenes de antes/durante/después';
+        return res.redirect(`/tickets/${id}`);
+      }
+
       // Guardar información de la imagen en la BD
-      const ruta = `/uploads/tickets/${file.filename}`;
+      // Con Cloudinary, file.path contiene la URL completa de la imagen
+      const ruta = file.path; // URL de Cloudinary
+      const publicId = file.filename; // Public ID de Cloudinary
       
       await db.query(
-        `INSERT INTO tickets_imagenes (ticket_id, nombre_archivo, ruta_archivo, mime_type, tamanio, subido_por, descripcion)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [id, file.originalname, ruta, file.mimetype, file.size, user.id, req.body.descripcion || '']
+        `INSERT INTO tickets_imagenes (ticket_id, nombre_archivo, ruta_archivo, mime_type, tamanio, subido_por, descripcion, cloudinary_id, tipo_imagen)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [id, file.originalname, ruta, file.mimetype, file.size, user.id, descripcion || '', publicId, tipoImagenFinal]
       );
 
       req.session.message = 'Imagen subida exitosamente';
@@ -465,13 +514,23 @@ const ticketsController = {
         return res.redirect(`/tickets/${id}`);
       }
 
-      // Eliminar archivo físico
-      const fs = require('fs');
-      const path = require('path');
-      const filePath = path.join(__dirname, '../public', imagen.ruta_archivo);
-      
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      // Eliminar imagen de Cloudinary si tiene cloudinary_id
+      if (imagen.cloudinary_id) {
+        try {
+          await deleteImage(imagen.cloudinary_id);
+        } catch (cloudinaryError) {
+          console.error('Error al eliminar de Cloudinary:', cloudinaryError);
+          // Continuar con la eliminación de la BD aunque falle Cloudinary
+        }
+      } else {
+        // Si es una imagen antigua (almacenada localmente), eliminar archivo físico
+        const fs = require('fs');
+        const path = require('path');
+        const filePath = path.join(__dirname, '../public', imagen.ruta_archivo);
+        
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
       }
 
       // Eliminar registro de BD
@@ -482,6 +541,86 @@ const ticketsController = {
     } catch (error) {
       console.error('Error al eliminar imagen:', error);
       req.session.error = 'Error al eliminar imagen';
+      res.redirect(`/tickets/${id}`);
+    }
+  },
+
+  // Registrar hora de inicio (SOLO SKN para soporte físico)
+  registrarHoraInicio: async (req, res) => {
+    const { id } = req.params;
+    const user = req.session.user;
+    const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user';
+
+    try {
+      if (!esSKN) {
+        req.session.error = 'Solo usuarios SKN pueden registrar hora de inicio';
+        return res.redirect(`/tickets/${id}`);
+      }
+
+      // Verificar que sea soporte físico
+      const ticket = await db.query('SELECT tipo_soporte FROM tickets WHERE id = $1', [id]);
+      if (ticket.rows.length === 0 || ticket.rows[0].tipo_soporte !== 'fisico') {
+        req.session.error = 'Solo para tickets de soporte físico';
+        return res.redirect(`/tickets/${id}`);
+      }
+
+      await db.query(
+        'UPDATE tickets SET hora_inicio = NOW() WHERE id = $1',
+        [id]
+      );
+
+      req.session.message = 'Hora de inicio registrada';
+      res.redirect(`/tickets/${id}`);
+    } catch (error) {
+      console.error('Error al registrar hora inicio:', error);
+      req.session.error = 'Error al registrar hora de inicio';
+      res.redirect(`/tickets/${id}`);
+    }
+  },
+
+  // Registrar hora de fin (SOLO SKN para soporte físico)
+  registrarHoraFin: async (req, res) => {
+    const { id } = req.params;
+    const user = req.session.user;
+    const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user';
+
+    try {
+      if (!esSKN) {
+        req.session.error = 'Solo usuarios SKN pueden registrar hora de fin';
+        return res.redirect(`/tickets/${id}`);
+      }
+
+      // Verificar que sea soporte físico y que tenga hora de inicio
+      const ticket = await db.query(
+        'SELECT tipo_soporte, hora_inicio FROM tickets WHERE id = $1',
+        [id]
+      );
+      
+      if (ticket.rows.length === 0) {
+        req.session.error = 'Ticket no encontrado';
+        return res.redirect('/tickets');
+      }
+
+      if (ticket.rows[0].tipo_soporte !== 'fisico') {
+        req.session.error = 'Solo para tickets de soporte físico';
+        return res.redirect(`/tickets/${id}`);
+      }
+
+      if (!ticket.rows[0].hora_inicio) {
+        req.session.error = 'Debe registrar primero la hora de inicio';
+        return res.redirect(`/tickets/${id}`);
+      }
+
+      await db.query(
+        'UPDATE tickets SET hora_fin = NOW() WHERE id = $1',
+        [id]
+      );
+
+      req.session.message = 'Hora de fin registrada. Duración calculada automáticamente.';
+      res.redirect(`/tickets/${id}`);
+    } catch (error) {
+      console.error('Error al registrar hora fin:', error);
+      req.session.error = 'Error al registrar hora de fin';
       res.redirect(`/tickets/${id}`);
     }
   }

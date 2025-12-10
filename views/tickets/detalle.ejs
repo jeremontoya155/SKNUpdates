@@ -103,6 +103,49 @@
           <% } %>
         </div>
 
+        <% if (ticket.tipo_trabajo_nombre) { %>
+          <div class="detail-row">
+            <div class="detail-item">
+              <label>🔧 Tipo de Trabajo</label>
+              <p>
+                <span class="badge" style="background: <%= ticket.tipo_trabajo_color || '#2196F3' %>;">
+                  <%= ticket.tipo_trabajo_nombre %>
+                </span>
+              </p>
+              <% if (ticket.tipo_trabajo_descripcion) { %>
+                <small style="color: #666;"><%= ticket.tipo_trabajo_descripcion %></small>
+              <% } %>
+            </div>
+          </div>
+        <% } %>
+
+        <% if (ticket.tipo_soporte === 'fisico') { %>
+          <div class="detail-row" style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+            <h4 style="margin: 0 0 1rem 0; color: #1976d2;">⏱️ Control de Tiempo (Soporte Físico)</h4>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="detail-item">
+                <label>🟢 Hora Inicio</label>
+                <p><%= ticket.hora_inicio ? new Date(ticket.hora_inicio).toLocaleString('es-AR') : 'No registrada' %></p>
+              </div>
+              <div class="detail-item">
+                <label>🔴 Hora Fin</label>
+                <p><%= ticket.hora_fin ? new Date(ticket.hora_fin).toLocaleString('es-AR') : 'No registrada' %></p>
+              </div>
+            </div>
+            
+            <% if (ticket.duracion_minutos) { %>
+              <div class="detail-item" style="margin-top: 1rem;">
+                <label>⏱️ Duración Total</label>
+                <p style="font-size: 1.2rem; font-weight: bold; color: #1976d2;">
+                  <%= Math.floor(ticket.duracion_minutos / 60) %>h <%= Math.floor(ticket.duracion_minutos % 60) %>min
+                  <small style="color: #666; font-weight: normal;">(<%=  Math.round(ticket.duracion_minutos) %> minutos)</small>
+                </p>
+              </div>
+            <% } %>
+          </div>
+        <% } %>
+
         <div class="detail-row">
           <div class="detail-item full-width">
             <label>📋 Descripción</label>
@@ -119,6 +162,25 @@
           <h3>⚙️ Acciones (Solo SKN)</h3>
         </div>
         <div class="detail-content">
+          <% if (ticket.tipo_soporte === 'fisico') { %>
+            <div style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+              <h4 style="margin: 0 0 1rem 0;">⏱️ Registro de Tiempo</h4>
+              <div class="form-row">
+                <% if (!ticket.hora_inicio) { %>
+                  <form action="/tickets/<%= ticket.id %>/hora-inicio" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-primary">🟢 Registrar Hora de Inicio</button>
+                  </form>
+                <% } else if (!ticket.hora_fin) { %>
+                  <form action="/tickets/<%= ticket.id %>/hora-fin" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">🔴 Registrar Hora de Fin</button>
+                  </form>
+                <% } else { %>
+                  <div class="alert alert-success">✅ Tiempo registrado completamente</div>
+                <% } %>
+              </div>
+            </div>
+          <% } %>
+
           <div class="form-row">
             <form action="/tickets/<%= ticket.id %>/asignarme" method="POST" style="display: inline;">
               <button type="submit" class="btn btn-primary">👤 Asignarme este ticket</button>
@@ -187,59 +249,124 @@
     <!-- Imágenes -->
     <div class="detail-card" style="margin-top: 2rem;">
       <div class="detail-header">
-        <h3>📸 Imágenes del Error</h3>
+        <h3>📸 Imágenes 
+          <% if (ticket.tipo_soporte === 'fisico') { %>
+            <span class="badge" style="background: #2196F3;">🏢 Soporte Físico</span>
+          <% } else { %>
+            <span class="badge" style="background: #4CAF50;">💻 Soporte Remoto</span>
+          <% } %>
+        </h3>
       </div>
       
       <div class="detail-content">
+        <% 
+          // Organizar imágenes por tipo
+          const imagenesInicial = imagenes.filter(img => img.tipo_imagen === 'inicial');
+          const imagenesAntes = imagenes.filter(img => img.tipo_imagen === 'antes');
+          const imagenesDurante = imagenes.filter(img => img.tipo_imagen === 'durante');
+          const imagenesDespues = imagenes.filter(img => img.tipo_imagen === 'despues');
+          const imagenesGeneral = imagenes.filter(img => img.tipo_imagen === 'general' || !img.tipo_imagen);
+        %>
+
+        <!-- Imagen inicial del problema -->
+        <% if (imagenesInicial.length > 0) { %>
+          <div style="margin-bottom: 2rem;">
+            <h4 style="color: #f44336; margin-bottom: 1rem;">🔴 Imagen Inicial del Problema</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+              <% imagenesInicial.forEach(img => { %>
+                <%- include('../partials/imagen-card', { img, ticket, user, esSKN }) %>
+              <% }) %>
+            </div>
+          </div>
+        <% } %>
+
+        <!-- Para soporte físico: Antes, Durante, Después -->
+        <% if (ticket.tipo_soporte === 'fisico') { %>
+          <% if (imagenesAntes.length > 0) { %>
+            <div style="margin-bottom: 2rem;">
+              <h4 style="color: #ff9800; margin-bottom: 1rem;">⏪ Antes de la Intervención</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                <% imagenesAntes.forEach(img => { %>
+                  <%- include('../partials/imagen-card', { img, ticket, user, esSKN }) %>
+                <% }) %>
+              </div>
+            </div>
+          <% } %>
+
+          <% if (imagenesDurante.length > 0) { %>
+            <div style="margin-bottom: 2rem;">
+              <h4 style="color: #2196f3; margin-bottom: 1rem;">🔧 Durante la Intervención</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                <% imagenesDurante.forEach(img => { %>
+                  <%- include('../partials/imagen-card', { img, ticket, user, esSKN }) %>
+                <% }) %>
+              </div>
+            </div>
+          <% } %>
+
+          <% if (imagenesDespues.length > 0) { %>
+            <div style="margin-bottom: 2rem;">
+              <h4 style="color: #4caf50; margin-bottom: 1rem;">✅ Después de la Intervención (Solucionado)</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                <% imagenesDespues.forEach(img => { %>
+                  <%- include('../partials/imagen-card', { img, ticket, user, esSKN }) %>
+                <% }) %>
+              </div>
+            </div>
+          <% } %>
+        <% } %>
+
+        <!-- Imágenes generales -->
+        <% if (imagenesGeneral.length > 0) { %>
+          <div style="margin-bottom: 2rem;">
+            <h4 style="color: #666; margin-bottom: 1rem;">📷 Otras Imágenes</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+              <% imagenesGeneral.forEach(img => { %>
+                <%- include('../partials/imagen-card', { img, ticket, user, esSKN }) %>
+              <% }) %>
+            </div>
+          </div>
+        <% } %>
+
         <% if (imagenes.length === 0) { %>
           <p style="color: #666; text-align: center; padding: 1rem;">No hay imágenes adjuntas</p>
-        <% } else { %>
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-            <% imagenes.forEach(img => { %>
-              <div style="border: 1px solid #ddd; border-radius: 8px; padding: 0.5rem; background: #f9f9f9;">
-                <a href="<%= img.ruta_archivo %>" target="_blank">
-                  <img src="<%= img.ruta_archivo %>" alt="<%= img.nombre_archivo %>" 
-                       style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; cursor: pointer;">
-                </a>
-                <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem; color: #666;">
-                  📎 <%= img.nombre_archivo.length > 20 ? img.nombre_archivo.substring(0, 20) + '...' : img.nombre_archivo %>
-                </p>
-                <p style="margin: 0.25rem 0; font-size: 0.75rem; color: #999;">
-                  Por: <%= img.subido_por_nombre %><br>
-                  <%= new Date(img.fecha_subida).toLocaleDateString('es-AR') %>
-                </p>
-                <% if (img.descripcion) { %>
-                  <p style="margin: 0.25rem 0; font-size: 0.75rem; font-style: italic;"><%= img.descripcion %></p>
-                <% } %>
-                <% if (esSKN || img.subido_por === user.id) { %>
-                  <form action="/tickets/<%= ticket.id %>/imagen/<%= img.id %>/eliminar" method="POST" style="margin-top: 0.5rem;">
-                    <button type="submit" class="btn btn-danger" style="width: 100%; font-size: 0.8rem; padding: 0.3rem;" 
-                            onclick="return confirm('¿Eliminar esta imagen?')">
-                      🗑️ Eliminar
-                    </button>
-                  </form>
-                <% } %>
-              </div>
-            <% }) %>
-          </div>
         <% } %>
 
         <!-- Formulario para subir nueva imagen -->
         <form action="/tickets/<%= ticket.id %>/imagen" method="POST" enctype="multipart/form-data" 
-              style="border-top: 1px solid #ddd; padding-top: 1.5rem; margin-top: 1rem;">
+              style="border-top: 2px solid #ddd; padding-top: 1.5rem; margin-top: 2rem;">
+          <h4 style="margin-bottom: 1rem;">📤 Subir Nueva Imagen</h4>
+          
+          <% if (ticket.tipo_soporte === 'fisico' && esSKN) { %>
+            <div class="form-group">
+              <label for="tipo_imagen">Tipo de Imagen *</label>
+              <select id="tipo_imagen" name="tipo_imagen" required>
+                <option value="general">📷 Imagen General</option>
+                <option value="antes">⏪ Antes de la Intervención</option>
+                <option value="durante">� Durante la Intervención</option>
+                <option value="despues">✅ Después de la Intervención (Solucionado)</option>
+              </select>
+              <small>💡 Documenta el proceso de solución del problema</small>
+            </div>
+          <% } else { %>
+            <input type="hidden" name="tipo_imagen" value="general">
+          <% } %>
+
           <div class="form-group">
-            <label for="imagen">📤 Subir Nueva Imagen</label>
-            <input type="file" id="imagen" name="imagen" accept="image/*" required 
+            <label for="imagen">Seleccionar Imagen *</label>
+            <input type="file" id="imagen" name="imagen" accept="image/jpeg,image/jpg,image/png,image/webp" required 
                    style="display: block; width: 100%; padding: 0.5rem; border: 2px dashed #ccc; border-radius: 4px;">
-            <p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
-              Formatos: JPG, PNG, GIF, WEBP • Tamaño máximo: 5MB
-            </p>
+            <small style="font-size: 0.85rem; color: #666; display: block; margin-top: 0.5rem;">
+              📋 Formatos: JPG, PNG, WEBP • Tamaño máximo: 10MB • Almacenado en Cloudinary
+            </small>
           </div>
+          
           <div class="form-group">
             <label for="descripcion">Descripción (opcional)</label>
             <input type="text" id="descripcion" name="descripcion" maxlength="255" 
                    placeholder="Ej: Error en la pantalla principal">
           </div>
+          
           <button type="submit" class="btn btn-primary">📸 Subir Imagen</button>
         </form>
       </div>

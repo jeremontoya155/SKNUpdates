@@ -1,0 +1,42 @@
+<div style="border: 1px solid #ddd; border-radius: 8px; padding: 0.5rem; background: #f9f9f9;">
+  <a href="<%= img.ruta_archivo %>" target="_blank" rel="noopener">
+    <img 
+      src="<%= img.ruta_archivo %>" 
+      alt="<%= img.nombre_archivo %>" 
+      onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22150%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23666%22%3EError al cargar%3C/text%3E%3C/svg%3E'"
+      style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; cursor: pointer; display: block;">
+  </a>
+  <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem; color: #666;">
+    📎 <%= img.nombre_archivo.length > 20 ? img.nombre_archivo.substring(0, 20) + '...' : img.nombre_archivo %>
+  </p>
+  <p style="margin: 0.25rem 0; font-size: 0.75rem; color: #999;">
+    Por: <%= img.subido_por_nombre %><br>
+    <%= new Date(img.fecha_subida).toLocaleDateString('es-AR') %>
+  </p>
+  <% if (img.descripcion) { %>
+    <p style="margin: 0.25rem 0; font-size: 0.75rem; font-style: italic; color: #555;">
+      💬 <%= img.descripcion %>
+    </p>
+  <% } %>
+  <% if (img.tipo_imagen) { %>
+    <p style="margin: 0.25rem 0; font-size: 0.7rem; color: #999; font-style: italic;">
+      <% 
+        let tipoTexto = '';
+        if (img.tipo_imagen === 'inicial') tipoTexto = '🔴 Imagen inicial del problema';
+        else if (img.tipo_imagen === 'antes') tipoTexto = '⏪ Antes de la solución';
+        else if (img.tipo_imagen === 'durante') tipoTexto = '🔧 Durante la solución';
+        else if (img.tipo_imagen === 'despues') tipoTexto = '✅ Después de la solución';
+        else tipoTexto = '📷 Imagen general';
+      %>
+      <%= tipoTexto %>
+    </p>
+  <% } %>
+  <% if (esSKN || img.subido_por === user.id) { %>
+    <form action="/tickets/<%= ticket.id %>/imagen/<%= img.id %>/eliminar" method="POST" style="margin-top: 0.5rem;">
+      <button type="submit" class="btn btn-danger" style="width: 100%; font-size: 0.8rem; padding: 0.3rem;" 
+              onclick="return confirm('¿Eliminar esta imagen?')">
+        🗑️ Eliminar
+      </button>
+    </form>
+  <% } %>
+</div>

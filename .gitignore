@@ -2,3 +2,22 @@ node_modules/
 .env
 *.log
 .DS_Store
+
+# Uploads locales (ahora usamos Cloudinary)
+public/uploads/tickets/*
+public/uploads/evaluaciones/*
+!public/uploads/tickets/.gitkeep
+!public/uploads/evaluaciones/.gitkeep
+
+# Archivos de documentación auxiliares
+*.md
+!README.md
+
+# Scripts auxiliares de migración y creación
+run-*.js
+crear-empresas-*.js
+test-*.js
+verificar-*.js
+
+# Archivos de credenciales
+credenciales-*.txt

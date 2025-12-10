@@ -25,7 +25,7 @@
       <div class="alert alert-error"><%= error %></div>
     <% } %>
 
-    <form action="/tickets/nuevo" method="POST" class="form">
+    <form action="/tickets/nuevo" method="POST" enctype="multipart/form-data" class="form">
       <% if (esSKN) { %>
         <div class="form-group">
           <label for="empresa_id">Empresa *</label>
@@ -42,6 +42,26 @@
           🏢 Empresa: <strong><%= user.empresa_nombre %></strong>
         </div>
       <% } %>
+
+      <div class="form-group">
+        <label for="tipo_soporte">Tipo de Soporte *</label>
+        <select id="tipo_soporte" name="tipo_soporte" required onchange="toggleImagenRequerida()">
+          <option value="remoto">💻 Remoto - Soporte a distancia</option>
+          <option value="fisico">🏢 Físico - Visita presencial al lugar</option>
+        </select>
+        <small id="tipo-soporte-info">💡 Selecciona si el problema requiere asistencia presencial o puede resolverse remotamente</small>
+      </div>
+
+      <div class="form-group">
+        <label for="tipo_trabajo_id">Tipo de Trabajo</label>
+        <select id="tipo_trabajo_id" name="tipo_trabajo_id">
+          <option value="">Sin especificar</option>
+          <% tiposTrabajo.forEach(tipo => { %>
+            <option value="<%= tipo.id %>"><%= tipo.nombre %> - <%= tipo.descripcion %></option>
+          <% }) %>
+        </select>
+        <small>💡 Opcional: ¿Qué tipo de trabajo es? (Instalación, Reparación, etc.)</small>
+      </div>
 
       <div class="form-group">
         <label for="titulo">Título *</label>
@@ -63,6 +83,19 @@
         </select>
       </div>
 
+      <div class="form-group">
+        <label for="imagen_inicial">
+          📷 Imagen del Problema 
+          <span id="imagen-requerida" style="display: none; color: red;">*</span>
+          <span id="imagen-opcional">(Opcional)</span>
+        </label>
+        <input type="file" id="imagen_inicial" name="imagen_inicial" accept="image/jpeg,image/jpg,image/png,image/webp">
+        <small id="imagen-info">💡 Adjunta una foto del problema para ayudar a resolver el ticket más rápido. Máximo 10MB.</small>
+        <small id="imagen-info-fisico" style="display: none; color: #d32f2f; font-weight: bold;">
+          ⚠️ Para soporte físico es OBLIGATORIO adjuntar una imagen del problema inicial.
+        </small>
+      </div>
+
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">💾 Crear Ticket</button>
         <a href="/tickets" class="btn btn-secondary">Cancelar</a>
@@ -71,5 +104,33 @@
   </main>
 
   <%- include('../partials/footer') %>
+  
+  <script>
+    function toggleImagenRequerida() {
+      const tipoSoporte = document.getElementById('tipo_soporte').value;
+      const imagenInput = document.getElementById('imagen_inicial');
+      const imagenRequerida = document.getElementById('imagen-requerida');
+      const imagenOpcional = document.getElementById('imagen-opcional');
+      const imagenInfo = document.getElementById('imagen-info');
+      const imagenInfoFisico = document.getElementById('imagen-info-fisico');
+      
+      if (tipoSoporte === 'fisico') {
+        imagenInput.required = true;
+        imagenRequerida.style.display = 'inline';
+        imagenOpcional.style.display = 'none';
+        imagenInfo.style.display = 'none';
+        imagenInfoFisico.style.display = 'block';
+      } else {
+        imagenInput.required = false;
+        imagenRequerida.style.display = 'none';
+        imagenOpcional.style.display = 'inline';
+        imagenInfo.style.display = 'block';
+        imagenInfoFisico.style.display = 'none';
+      }
+    }
+    
+    // Ejecutar al cargar la página
+    document.addEventListener('DOMContentLoaded', toggleImagenRequerida);
+  </script>
 </body>
 </html>
