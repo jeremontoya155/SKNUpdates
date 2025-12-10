@@ -12,7 +12,7 @@
   <main class="container">
     <div class="page-header">
       <h1>🏢 <%= empresa.nombre %></h1>
-      <div>
+      <div class="actions">
         <form action="/empresas/<%= empresa.id %>/toggle" method="POST" style="display: inline;">
           <button type="submit" class="btn <%= empresa.activo ? 'btn-warning' : 'btn-success' %>">
             <%= empresa.activo ? '❌ Desactivar' : '✅ Activar' %>
@@ -22,9 +22,67 @@
       </div>
     </div>
 
+    <!-- Estadísticas Rápidas -->
+    <div class="stats-grid">
+      <a href="#usuarios-section" class="stat-card stat-blue" style="text-decoration: none; cursor: pointer;">
+        <span class="stat-icon">👥</span>
+        <div class="stat-content">
+          <h3>Usuarios</h3>
+          <p class="stat-number"><%= stats.total_usuarios || 0 %></p>
+          <p>Usuarios registrados</p>
+        </div>
+      </a>
+
+      <a href="#tickets-section" class="stat-card stat-orange" style="text-decoration: none; cursor: pointer;">
+        <span class="stat-icon">🎫</span>
+        <div class="stat-content">
+          <h3>Tickets</h3>
+          <p class="stat-number"><%= stats.total_tickets || 0 %></p>
+          <p><%= stats.tickets_pendientes || 0 %> pendientes</p>
+        </div>
+      </a>
+
+      <a href="#inventario-section" class="stat-card stat-green" style="text-decoration: none; cursor: pointer;">
+        <span class="stat-icon">📦</span>
+        <div class="stat-content">
+          <h3>Inventario</h3>
+          <p class="stat-number"><%= stats.total_materiales || 0 %></p>
+          <p>Materiales registrados</p>
+        </div>
+      </a>
+
+      <a href="#sucursales-section" class="stat-card stat-primary" style="text-decoration: none; cursor: pointer;">
+        <span class="stat-icon">🏪</span>
+        <div class="stat-content">
+          <h3>Sucursales</h3>
+          <p class="stat-number"><%= stats.total_sucursales || 0 %></p>
+          <p>Ubicaciones</p>
+        </div>
+      </a>
+
+      <a href="#servidores-section" class="stat-card stat-blue" style="text-decoration: none; cursor: pointer;">
+        <span class="stat-icon">🖥️</span>
+        <div class="stat-content">
+          <h3>Servidores</h3>
+          <p class="stat-number"><%= stats.total_servidores || 0 %></p>
+          <p>Servidores activos</p>
+        </div>
+      </a>
+
+      <a href="#visitas-section" class="stat-card stat-success" style="text-decoration: none; cursor: pointer;">
+        <span class="stat-icon">📅</span>
+        <div class="stat-content">
+          <h3>Visitas</h3>
+          <p class="stat-number"><%= stats.total_visitas || 0 %></p>
+          <p>Visitas programadas</p>
+        </div>
+      </a>
+    </div>
+
+    <!-- Información de la Empresa -->
     <div class="detail-card">
       <div class="detail-header">
-        <h2>Información de la Empresa</h2>
+        <h2>📋 Información de la Empresa</h2>
         <span class="badge <%= empresa.activo ? 'badge-success' : 'badge-danger' %>">
           <%= empresa.activo ? '✅ Activa' : '❌ Inactiva' %>
         </span>
@@ -96,8 +154,46 @@
       </div>
     </div>
 
+    <!-- Accesos Rápidos -->
+    <div class="quick-actions">
+      <h2>⚡ Accesos Rápidos</h2>
+      <div class="actions-grid">
+        <% if (stats.total_tickets > 0) { %>
+          <a href="/tickets?empresa_id=<%= empresa.id %>" class="action-card action-primary">
+            <span class="action-icon">🎫</span>
+            <span>Ver Todos los Tickets</span>
+            <small><%= stats.total_tickets %> total</small>
+          </a>
+        <% } %>
+
+        <% if (stats.total_materiales > 0) { %>
+          <a href="/inventario?empresa_id=<%= empresa.id %>" class="action-card action-success">
+            <span class="action-icon">📦</span>
+            <span>Ver Inventario</span>
+            <small><%= stats.total_materiales %> items</small>
+          </a>
+        <% } %>
+
+        <% if (stats.total_servidores > 0) { %>
+          <a href="/servidores?empresa_id=<%= empresa.id %>" class="action-card action-warning">
+            <span class="action-icon">🖥️</span>
+            <span>Ver Servidores</span>
+            <small><%= stats.total_servidores %> activos</small>
+          </a>
+        <% } %>
+
+        <% if (stats.total_visitas > 0) { %>
+          <a href="/visitas?empresa_id=<%= empresa.id %>" class="action-card action-secondary">
+            <span class="action-icon">📅</span>
+            <span>Ver Visitas</span>
+            <small><%= stats.total_visitas %> programadas</small>
+          </a>
+        <% } %>
+      </div>
+    </div>
+
     <!-- Sucursales -->
-    <div class="detail-card" style="margin-top: 2rem;">
+    <div id="sucursales-section" class="detail-card" style="margin-top: var(--spacing-xl); scroll-margin-top: 80px;">
       <div class="detail-header">
         <h2>🏪 Sucursales (<%= sucursales.length %>)</h2>
         <button onclick="mostrarFormSucursal()" class="btn btn-primary">➕ Nueva Sucursal</button>
@@ -250,9 +346,270 @@
       </div>
     </div>
 
-    <!-- Pestañas de contenido -->
-    <div style="margin-top: 2rem;">
-      <div class="tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 2px solid var(--border-color);">
+    <!-- Usuarios -->
+    <div id="usuarios-section" class="detail-card" style="margin-top: var(--spacing-xl); scroll-margin-top: 80px;">
+      <div class="detail-header">
+        <h2>👥 Usuarios (<%= usuarios.length %>)</h2>
+      </div>
+      <div class="detail-content">
+        <% if (usuarios.length === 0) { %>
+          <div class="empty-state">
+            <p>👤 No hay usuarios registrados</p>
+          </div>
+        <% } else { %>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% usuarios.forEach(u => { %>
+                  <tr>
+                    <td><strong><%= u.nombre %></strong></td>
+                    <td><%= u.email %></td>
+                    <td><span class="badge badge-primary"><%= u.rol %></span></td>
+                    <td>
+                      <span class="badge <%= u.activo ? 'badge-success' : 'badge-danger' %>">
+                        <%= u.activo ? '✅ Activo' : '❌ Inactivo' %>
+                      </span>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Tickets -->
+    <div id="tickets-section" class="detail-card" style="margin-top: var(--spacing-xl); scroll-margin-top: 80px;">
+      <div class="detail-header">
+        <h2>🎫 Tickets Recientes</h2>
+        <% if (stats.total_tickets > 10) { %>
+          <a href="/tickets?empresa_id=<%= empresa.id %>" class="btn btn-primary">Ver Todos (<%= stats.total_tickets %>) →</a>
+        <% } %>
+      </div>
+      <div class="detail-content">
+        <% if (tickets.length === 0) { %>
+          <div class="empty-state">
+            <p>🎫 No hay tickets registrados</p>
+          </div>
+        <% } else { %>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Título</th>
+                  <th>Solicitante</th>
+                  <th>Estado</th>
+                  <th>Fecha</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% tickets.slice(0, 20).forEach(t => { %>
+                  <tr>
+                    <td><strong>#<%= t.id %></strong></td>
+                    <td><%= t.titulo %></td>
+                    <td><%= t.solicitante_nombre %></td>
+                    <td>
+                      <% 
+                        let badge = 'badge';
+                        if (t.estado === 'abierto') badge = 'badge-warning';
+                        else if (t.estado === 'en_proceso') badge = 'badge-primary';
+                        else if (t.estado === 'cerrado') badge = 'badge-success';
+                      %>
+                      <span class="badge <%= badge %>"><%= t.estado %></span>
+                    </td>
+                    <td><%= new Date(t.fecha_creacion).toLocaleDateString('es-AR') %></td>
+                    <td>
+                      <a href="/tickets/<%= t.id %>" class="btn-small">Ver</a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Inventario -->
+    <div id="inventario-section" class="detail-card" style="margin-top: var(--spacing-xl); scroll-margin-top: 80px;">
+      <div class="detail-header">
+        <h2>📦 Inventario</h2>
+        <% if (stats.total_materiales > 10) { %>
+          <a href="/inventario?empresa_id=<%= empresa.id %>" class="btn btn-primary">Ver Todo (<%= stats.total_materiales %>) →</a>
+        <% } %>
+      </div>
+      <div class="detail-content">
+        <% if (materiales.length === 0) { %>
+          <div class="empty-state">
+            <p>📦 No hay materiales en inventario</p>
+          </div>
+        <% } else { %>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Material</th>
+                  <th>Categoría</th>
+                  <th>Stock</th>
+                  <th>Ubicación</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% materiales.slice(0, 50).forEach(m => { %>
+                  <tr <%= m.stock_actual < m.stock_minimo ? 'class="stock-bajo"' : '' %>>
+                    <td><strong><%= m.nombre %></strong></td>
+                    <td><%= m.categoria_nombre || 'N/A' %></td>
+                    <td>
+                      <% if (m.stock_actual < m.stock_minimo) { %>
+                        <span class="stock-bajo"><%= m.stock_actual %></span>
+                      <% } else { %>
+                        <%= m.stock_actual %>
+                      <% } %>
+                    </td>
+                    <td><%= m.ubicacion || 'N/A' %></td>
+                    <td>
+                      <a href="/inventario/<%= m.id %>" class="btn-small">Ver</a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Servidores -->
+    <div id="servidores-section" class="detail-card" style="margin-top: var(--spacing-xl); scroll-margin-top: 80px;">
+      <div class="detail-header">
+        <h2>🖥️ Servidores (<%= servidores.length %>)</h2>
+      </div>
+      <div class="detail-content">
+        <% if (servidores.length === 0) { %>
+          <div class="empty-state">
+            <p>🖥️ No hay servidores registrados</p>
+          </div>
+        <% } else { %>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>IP</th>
+                  <th>SO</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% servidores.forEach(s => { %>
+                  <tr>
+                    <td><strong><%= s.nombre %></strong></td>
+                    <td><%= s.ip %></td>
+                    <td><%= s.sistema_operativo || 'N/A' %></td>
+                    <td>
+                      <span class="badge <%= s.activo ? 'badge-success' : 'badge-danger' %>">
+                        <%= s.activo ? '✅ Activo' : '❌ Inactivo' %>
+                      </span>
+                    </td>
+                    <td>
+                      <a href="/servidores/<%= s.id %>" class="btn-small">Ver</a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Visitas -->
+    <div id="visitas-section" class="detail-card" style="margin-top: var(--spacing-xl); scroll-margin-top: 80px;">
+      <div class="detail-header">
+        <h2>📅 Visitas Programadas</h2>
+      </div>
+      <div class="detail-content">
+        <% if (visitas.length === 0) { %>
+          <div class="empty-state">
+            <p>📅 No hay visitas programadas</p>
+          </div>
+        <% } else { %>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Motivo</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% visitas.forEach(v => { %>
+                  <tr>
+                    <td><%= new Date(v.fecha_visita).toLocaleString('es-AR') %></td>
+                    <td><%= v.motivo || 'N/A' %></td>
+                    <td>
+                      <% 
+                        let badge = 'badge';
+                        if (v.estado === 'programada') badge = 'badge-primary';
+                        else if (v.estado === 'en_curso') badge = 'badge-warning';
+                        else if (v.estado === 'completada') badge = 'badge-success';
+                        else if (v.estado === 'cancelada') badge = 'badge-danger';
+                      %>
+                      <span class="badge <%= badge %>"><%= v.estado %></span>
+                    </td>
+                    <td>
+                      <a href="/visitas/<%= v.id %>" class="btn-small">Ver</a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+  </main>
+
+  <%- include('../partials/footer') %>
+
+  <script>
+    function mostrarFormSucursal() {
+      document.getElementById('form-sucursal').style.display = 'block';
+    }
+
+    function ocultarFormSucursal() {
+      document.getElementById('form-sucursal').style.display = 'none';
+    }
+
+    // Smooth scroll para los enlaces de estadísticas
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
         <button class="tab-btn active" onclick="showTab('usuarios')">👥 Usuarios (<%= usuarios.length %>)</button>
         <button class="tab-btn" onclick="showTab('materiales')">📦 Inventario (<%= materiales.length %>)</button>
         <button class="tab-btn" onclick="showTab('servidores')">🖧 Servidores (<%= servidores.length %>)</button>

@@ -271,9 +271,17 @@ button:disabled,
 
 .search-form .form-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr auto auto;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--spacing-sm);
   align-items: end;
+}
+
+.search-form .form-row .form-group {
+  min-width: 0; /* Permite que los items se compriman */
+}
+
+.search-form .form-row button {
+  white-space: nowrap;
 }
 
 .search-input {
