@@ -120,10 +120,12 @@
         <% } %>
 
         <% if (ticket.tipo_soporte === 'fisico') { %>
-          <div class="detail-row" style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-            <h4 style="margin: 0 0 1rem 0; color: #1976d2;">⏱️ Control de Tiempo (Soporte Físico)</h4>
+          <div class="detail-row time-control-card">
+            <div class="detail-item full-width">
+              <h4>⏱️ Control de Tiempo (Soporte Físico)</h4>
+            </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="time-grid">
               <div class="detail-item">
                 <label>🟢 Hora Inicio</label>
                 <p><%= ticket.hora_inicio ? new Date(ticket.hora_inicio).toLocaleString('es-AR') : 'No registrada' %></p>
@@ -135,9 +137,9 @@
             </div>
             
             <% if (ticket.duracion_minutos) { %>
-              <div class="detail-item" style="margin-top: 1rem;">
+              <div class="detail-item" style="margin-top: var(--spacing-md);">
                 <label>⏱️ Duración Total</label>
-                <p style="font-size: 1.2rem; font-weight: bold; color: #1976d2;">
+                <p style="font-size: 1.2rem; font-weight: 700; color: #1976d2;">
                   <%= Math.floor(ticket.duracion_minutos / 60) %>h <%= Math.floor(ticket.duracion_minutos % 60) %>min
                   <small style="color: #666; font-weight: normal;">(<%=  Math.round(ticket.duracion_minutos) %> minutos)</small>
                 </p>
@@ -157,14 +159,14 @@
 
     <!-- Acciones SOLO para SKN -->
     <% if (esSKN) { %>
-      <div class="detail-card" style="margin-top: 2rem; background-color: #fff8e1;">
+      <div class="detail-card actions-card">
         <div class="detail-header">
           <h3>⚙️ Acciones (Solo SKN)</h3>
         </div>
         <div class="detail-content">
           <% if (ticket.tipo_soporte === 'fisico') { %>
-            <div style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-              <h4 style="margin: 0 0 1rem 0;">⏱️ Registro de Tiempo</h4>
+            <div class="time-control-card" style="margin-bottom: var(--spacing-lg);">
+              <h4>⏱️ Registro de Tiempo</h4>
               <div class="form-row">
                 <% if (!ticket.hora_inicio) { %>
                   <form action="/tickets/<%= ticket.id %>/hora-inicio" method="POST" style="display: inline;">
@@ -197,15 +199,17 @@
             </form>
           </div>
 
-          <div class="form-row" style="margin-top: 1rem;">
-            <form action="/tickets/<%= ticket.id %>/estado" method="POST" style="display: inline;">
-              <label>Cambiar Estado:</label>
-              <select name="estado" required>
-                <option value="abierto" <%= ticket.estado === 'abierto' ? 'selected' : '' %>>⏳ Abierto</option>
-                <option value="en_proceso" <%= ticket.estado === 'en_proceso' ? 'selected' : '' %>>🔄 En Proceso</option>
-                <option value="cerrado" <%= ticket.estado === 'cerrado' ? 'selected' : '' %>>✅ Cerrado</option>
-                <option value="cancelado" <%= ticket.estado === 'cancelado' ? 'selected' : '' %>>⛔ Cancelado</option>
-              </select>
+          <div class="form-row" style="margin-top: var(--spacing-md);">
+            <form action="/tickets/<%= ticket.id %>/estado" method="POST" style="width: 100%;">
+              <div class="form-group">
+                <label>Cambiar Estado:</label>
+                <select name="estado" required>
+                  <option value="abierto" <%= ticket.estado === 'abierto' ? 'selected' : '' %>>⏳ Abierto</option>
+                  <option value="en_proceso" <%= ticket.estado === 'en_proceso' ? 'selected' : '' %>>🔄 En Proceso</option>
+                  <option value="cerrado" <%= ticket.estado === 'cerrado' ? 'selected' : '' %>>✅ Cerrado</option>
+                  <option value="cancelado" <%= ticket.estado === 'cancelado' ? 'selected' : '' %>>⛔ Cancelado</option>
+                </select>
+              </div>
               <button type="submit" class="btn btn-primary">💾 Actualizar Estado</button>
             </form>
           </div>
@@ -214,31 +218,36 @@
     <% } %>
 
     <!-- Comentarios -->
-    <div class="detail-card" style="margin-top: 2rem;">
+    <div class="detail-card" style="margin-top: var(--spacing-xl);">
       <div class="detail-header">
         <h3>💬 Comentarios</h3>
       </div>
       
       <div class="detail-content">
         <% if (comentarios.length === 0) { %>
-          <p style="color: #666; text-align: center; padding: 2rem;">No hay comentarios aún</p>
+          <div class="empty-state" style="padding: var(--spacing-xl); text-align: center;">
+            <p style="color: var(--color-gris-oscuro);">📭 No hay comentarios aún</p>
+          </div>
         <% } else { %>
-          <div class="comments-list">
+          <div class="comentarios-lista">
             <% comentarios.forEach(com => { %>
-              <div class="comment-item" style="border-left: 3px solid var(--primary-color); padding-left: 1rem; margin-bottom: 1rem;">
-                <p style="margin: 0; color: #666; font-size: 0.9rem;">
-                  <strong><%= com.usuario_nombre %></strong> • <%= new Date(com.fecha_comentario).toLocaleString('es-AR') %>
+              <div class="comentario">
+                <p>
+                  <strong><%= com.usuario_nombre %></strong>
+                  <span style="color: var(--color-gris-oscuro); font-size: 0.85rem;">
+                    <%= new Date(com.fecha_comentario).toLocaleString('es-AR') %>
+                  </span>
                 </p>
-                <p style="margin: 0.5rem 0 0 0;"><%= com.comentario %></p>
+                <p><%= com.comentario %></p>
               </div>
             <% }) %>
           </div>
         <% } %>
 
-        <form action="/tickets/<%= ticket.id %>/comentario" method="POST" style="margin-top: 2rem;">
+        <form action="/tickets/<%= ticket.id %>/comentario" method="POST" style="margin-top: var(--spacing-lg);">
           <div class="form-group">
-            <label for="comentario">Agregar Comentario</label>
-            <textarea id="comentario" name="comentario" rows="3" required placeholder="Escribe tu comentario aquí..."></textarea>
+            <label for="comentario">✍️ Agregar Comentario</label>
+            <textarea id="comentario" name="comentario" rows="4" required placeholder="Escribe tu comentario aquí..."></textarea>
             <input type="hidden" name="ticket_id" value="<%= ticket.id %>">
           </div>
           <button type="submit" class="btn btn-primary">💬 Agregar Comentario</button>
@@ -247,15 +256,14 @@
     </div>
 
     <!-- Imágenes -->
-    <div class="detail-card" style="margin-top: 2rem;">
+    <div class="detail-card" style="margin-top: var(--spacing-xl);">
       <div class="detail-header">
-        <h3>📸 Imágenes 
-          <% if (ticket.tipo_soporte === 'fisico') { %>
-            <span class="badge" style="background: #2196F3;">🏢 Soporte Físico</span>
-          <% } else { %>
-            <span class="badge" style="background: #4CAF50;">💻 Soporte Remoto</span>
-          <% } %>
-        </h3>
+        <h3>📸 Imágenes</h3>
+        <% if (ticket.tipo_soporte === 'fisico') { %>
+          <span class="badge badge-info">🏢 Soporte Físico</span>
+        <% } else { %>
+          <span class="badge badge-success">💻 Soporte Remoto</span>
+        <% } %>
       </div>
       
       <div class="detail-content">
@@ -270,9 +278,9 @@
 
         <!-- Imagen inicial del problema -->
         <% if (imagenesInicial.length > 0) { %>
-          <div style="margin-bottom: 2rem;">
-            <h4 style="color: #f44336; margin-bottom: 1rem;">🔴 Imagen Inicial del Problema</h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+          <div class="image-section">
+            <h4 style="color: var(--color-danger);">🔴 Imagen Inicial del Problema</h4>
+            <div class="image-gallery">
               <% imagenesInicial.forEach(img => { %>
                 <%- include('../partials/imagen-card', { img, ticket, user, esSKN }) %>
               <% }) %>
@@ -283,9 +291,9 @@
         <!-- Para soporte físico: Antes, Durante, Después -->
         <% if (ticket.tipo_soporte === 'fisico') { %>
           <% if (imagenesAntes.length > 0) { %>
-            <div style="margin-bottom: 2rem;">
-              <h4 style="color: #ff9800; margin-bottom: 1rem;">⏪ Antes de la Intervención</h4>
-              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="image-section">
+              <h4 style="color: var(--color-warning);">⏪ Antes de la Intervención</h4>
+              <div class="image-gallery">
                 <% imagenesAntes.forEach(img => { %>
                   <%- include('../partials/imagen-card', { img, ticket, user, esSKN }) %>
                 <% }) %>
@@ -294,9 +302,9 @@
           <% } %>
 
           <% if (imagenesDurante.length > 0) { %>
-            <div style="margin-bottom: 2rem;">
-              <h4 style="color: #2196f3; margin-bottom: 1rem;">🔧 Durante la Intervención</h4>
-              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="image-section">
+              <h4 style="color: var(--color-info);">🔧 Durante la Intervención</h4>
+              <div class="image-gallery">
                 <% imagenesDurante.forEach(img => { %>
                   <%- include('../partials/imagen-card', { img, ticket, user, esSKN }) %>
                 <% }) %>
@@ -305,9 +313,9 @@
           <% } %>
 
           <% if (imagenesDespues.length > 0) { %>
-            <div style="margin-bottom: 2rem;">
-              <h4 style="color: #4caf50; margin-bottom: 1rem;">✅ Después de la Intervención (Solucionado)</h4>
-              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="image-section">
+              <h4 style="color: var(--color-success);">✅ Después de la Intervención (Solucionado)</h4>
+              <div class="image-gallery">
                 <% imagenesDespues.forEach(img => { %>
                   <%- include('../partials/imagen-card', { img, ticket, user, esSKN }) %>
                 <% }) %>
@@ -318,9 +326,9 @@
 
         <!-- Imágenes generales -->
         <% if (imagenesGeneral.length > 0) { %>
-          <div style="margin-bottom: 2rem;">
-            <h4 style="color: #666; margin-bottom: 1rem;">📷 Otras Imágenes</h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+          <div class="image-section">
+            <h4 style="color: var(--color-gris-oscuro);">📷 Otras Imágenes</h4>
+            <div class="image-gallery">
               <% imagenesGeneral.forEach(img => { %>
                 <%- include('../partials/imagen-card', { img, ticket, user, esSKN }) %>
               <% }) %>
@@ -329,13 +337,15 @@
         <% } %>
 
         <% if (imagenes.length === 0) { %>
-          <p style="color: #666; text-align: center; padding: 1rem;">No hay imágenes adjuntas</p>
+          <div class="empty-state">
+            <p>📭 No hay imágenes adjuntas</p>
+          </div>
         <% } %>
 
         <!-- Formulario para subir nueva imagen -->
         <form action="/tickets/<%= ticket.id %>/imagen" method="POST" enctype="multipart/form-data" 
-              style="border-top: 2px solid #ddd; padding-top: 1.5rem; margin-top: 2rem;">
-          <h4 style="margin-bottom: 1rem;">📤 Subir Nueva Imagen</h4>
+              style="border-top: 2px solid var(--color-gris-claro); padding-top: var(--spacing-lg); margin-top: var(--spacing-xl);">
+          <h4 style="margin-bottom: var(--spacing-md);">📤 Subir Nueva Imagen</h4>
           
           <% if (ticket.tipo_soporte === 'fisico' && esSKN) { %>
             <div class="form-group">
@@ -343,7 +353,7 @@
               <select id="tipo_imagen" name="tipo_imagen" required>
                 <option value="general">📷 Imagen General</option>
                 <option value="antes">⏪ Antes de la Intervención</option>
-                <option value="durante">� Durante la Intervención</option>
+                <option value="durante">🔧 Durante la Intervención</option>
                 <option value="despues">✅ Después de la Intervención (Solucionado)</option>
               </select>
               <small>💡 Documenta el proceso de solución del problema</small>

@@ -47,7 +47,7 @@ const usuariosController = {
       }
 
       await db.query(
-        'UPDATE usuarios SET activo = true, fecha_aprobacion = NOW() WHERE id = $1',
+        "UPDATE usuarios SET activo = true, fecha_aprobacion = TIMEZONE('America/Argentina/Buenos_Aires', NOW()) WHERE id = $1",
         [id]
       );
 

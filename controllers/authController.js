@@ -39,7 +39,7 @@ const authController = {
       }
 
       // Actualizar último login
-      await db.query('UPDATE usuarios SET ultimo_login = NOW() WHERE id = $1', [user.id]);
+      await db.query("UPDATE usuarios SET ultimo_login = TIMEZONE('America/Argentina/Buenos_Aires', NOW()) WHERE id = $1", [user.id]);
 
       // Crear sesión
       req.session.user = {

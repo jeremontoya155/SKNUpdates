@@ -2,47 +2,89 @@
    VARIABLES CSS - COLORES CORPORATIVOS SKN
    ============================================ */
 :root {
-  /* Colores principales */
-  --color-naranja-primary: #E85D04;
-  --color-naranja-dark: #DC2F02;
-  --color-naranja-light: #F48C06;
+  /* Colores principales - Mejorados */
+  --color-naranja-primary: #FF6B35;
+  --color-naranja-dark: #E85D04;
+  --color-naranja-light: #FF8C61;
+  --color-naranja-lighter: #FFB199;
   --color-negro: #1A1A1A;
   --color-negro-light: #2D2D2D;
   --color-blanco: #FFFFFF;
-  --color-gris-claro: #F5F5F5;
-  --color-gris-medio: #CCCCCC;
-  --color-gris-oscuro: #666666;
+  --color-gris-claro: #F8F9FA;
+  --color-gris-medio: #DEE2E6;
+  --color-gris-oscuro: #6C757D;
   
-  /* Colores de estado */
-  --color-success: #28a745;
-  --color-warning: #ffc107;
-  --color-danger: #dc3545;
-  --color-info: #17a2b8;
+  /* Colores de estado - Modernizados */
+  --color-success: #10B981;
+  --color-success-light: #D1FAE5;
+  --color-warning: #F59E0B;
+  --color-warning-light: #FEF3C7;
+  --color-danger: #EF4444;
+  --color-danger-light: #FEE2E2;
+  --color-info: #3B82F6;
+  --color-info-light: #DBEAFE;
   
-  /* Tipografía */
-  --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  /* Colores complementarios */
+  --color-purple: #8B5CF6;
+  --color-purple-light: #EDE9FE;
+  --color-teal: #14B8A6;
+  --color-teal-light: #CCFBF1;
+  
+  /* Tipografía mejorada */
+  --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-size-base: 16px;
   --font-size-small: 14px;
+  --font-size-xs: 12px;
   --font-size-large: 18px;
+  --font-size-xl: 20px;
   --font-size-h1: 2.5rem;
   --font-size-h2: 2rem;
   --font-size-h3: 1.5rem;
+  --font-size-h4: 1.25rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
   
-  /* Espaciado */
-  --spacing-xs: 5px;
-  --spacing-sm: 10px;
-  --spacing-md: 20px;
-  --spacing-lg: 30px;
-  --spacing-xl: 40px;
+  /* Espaciado responsivo */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
   
-  /* Bordes y sombras */
-  --border-radius: 8px;
-  --border-radius-small: 4px;
-  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --box-shadow-hover: 0 4px 12px rgba(232, 93, 4, 0.2);
+  /* Bordes y sombras mejoradas */
+  --border-radius: 12px;
+  --border-radius-small: 6px;
+  --border-radius-large: 16px;
+  --border-radius-full: 9999px;
+  --box-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --box-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --box-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --box-shadow-hover: 0 10px 20px rgba(255, 107, 53, 0.2);
   
-  /* Transiciones */
-  --transition-speed: 0.3s;
+  /* Transiciones suaves */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  
+  /* Z-index */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  
+  /* Mobile breakpoints */
+  --mobile-sm: 375px;
+  --mobile-md: 425px;
+  --tablet: 768px;
+  --desktop: 1024px;
+  --desktop-lg: 1440px;
 }
 
 /* ============================================

@@ -1,57 +1,67 @@
 /* ============================================
-   HEADER Y NAVEGACIÓN RESPONSIVE
+   HEADER Y NAVEGACIÓN RESPONSIVE - MODERNIZADO
    ============================================ */
 
 header {
-  background: linear-gradient(135deg, var(--color-negro) 0%, var(--color-negro-light) 100%);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%);
+  box-shadow: var(--box-shadow-md);
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: var(--z-sticky);
   border-bottom: 3px solid var(--color-naranja-primary);
+  backdrop-filter: blur(10px);
 }
 
 .nav-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 var(--spacing-md);
+  padding: 0 var(--spacing-lg);
   display: flex;
   justify-content: space-between;
   align-items: center;
   min-height: 70px;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 
-/* Logo */
+/* Logo mejorado */
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-md);
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.logo:hover {
+  transform: scale(1.05);
 }
 
 .logo img {
   height: 45px;
   width: auto;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
 }
 
 .logo h1 {
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
   color: var(--color-blanco);
   margin: 0;
-  font-weight: 700;
-  letter-spacing: 1px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.5px;
 }
 
 .logo h1 span {
-  color: var(--color-naranja-primary);
+  background: linear-gradient(135deg, var(--color-naranja-primary), var(--color-naranja-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* Menú de navegación */
+/* Menú de navegación mejorado */
 .nav-menu {
   display: flex;
   list-style: none;
-  gap: 5px;
+  gap: var(--spacing-xs);
   margin: 0;
   padding: 0;
 }
@@ -63,41 +73,47 @@ header {
 .nav-menu a {
   color: var(--color-blanco);
   text-decoration: none;
-  padding: 10px 18px;
-  display: block;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   border-radius: var(--border-radius-small);
-  font-weight: 500;
-  transition: all var(--transition-speed);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  transition: all var(--transition-base);
   position: relative;
+  overflow: hidden;
 }
 
-.nav-menu a::after {
+.nav-menu a::before {
   content: '';
   position: absolute;
-  bottom: 5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 2px;
-  background-color: var(--color-naranja-primary);
-  transition: width var(--transition-speed);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--color-naranja-primary), var(--color-naranja-dark));
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  z-index: -1;
+}
+
+.nav-menu a:hover::before {
+  opacity: 1;
 }
 
 .nav-menu a:hover {
-  background-color: rgba(232, 93, 4, 0.1);
-  color: var(--color-naranja-primary);
-}
-
-.nav-menu a:hover::after {
-  width: 80%;
+  color: var(--color-blanco);
+  transform: translateY(-2px);
 }
 
 .nav-menu a.active {
-  background-color: var(--color-naranja-primary);
+  background: linear-gradient(135deg, var(--color-naranja-primary), var(--color-naranja-dark));
   color: var(--color-blanco);
+  box-shadow: var(--box-shadow-sm);
 }
 
-/* Info de usuario */
+/* Info de usuario mejorada */
 .user-info {
   display: flex;
   align-items: center;
@@ -198,11 +214,16 @@ header {
   
   .user-info {
     order: 2;
-    gap: 8px;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
   }
   
   .user-info span:first-child {
     display: none; /* Ocultar empresa en móvil */
+  }
+  
+  .user-info span {
+    font-size: var(--font-size-small);
   }
   
   .nav-menu {
@@ -211,30 +232,66 @@ header {
     width: 100%;
     max-height: 0;
     overflow: hidden;
-    transition: max-height var(--transition-speed) ease-out;
-    background-color: var(--color-negro-light);
-    border-radius: var(--border-radius);
+    transition: max-height var(--transition-base) ease-out;
+    background: linear-gradient(135deg, var(--color-negro-light), #3A3A3A);
+    border-radius: var(--border-radius-small);
     margin-top: var(--spacing-sm);
+    box-shadow: var(--box-shadow-md);
   }
   
   .nav-menu.active {
     max-height: 500px;
     padding: var(--spacing-sm) 0;
+    animation: slideDown 0.3s ease;
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   
   .nav-menu a {
-    padding: 12px var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
     border-radius: 0;
+    font-size: var(--font-size-base);
   }
   
-  .nav-menu a::after {
+  .nav-menu a::before {
     display: none;
   }
   
   .nav-menu a:hover {
-    background-color: rgba(232, 93, 4, 0.2);
-    padding-left: 25px;
+    background: linear-gradient(90deg, rgba(255, 107, 53, 0.2) 0%, transparent 100%);
+    padding-left: calc(var(--spacing-lg) + var(--spacing-sm));
+    transform: translateY(0);
   }
+  
+  .nav-menu a.active {
+    border-left: 4px solid var(--color-naranja-primary);
+  }
+}
+
+/* ============================================
+   ANIMACIONES ADICIONALES
+   ============================================ */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.nav-menu a.active {
+  animation: pulse 2s infinite;
 }
 
 @media (max-width: 480px) {

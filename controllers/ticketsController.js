@@ -354,7 +354,7 @@ const ticketsController = {
       // Si el estado es cerrado, actualizar fecha de cierre
       if (estado === 'cerrado') {
         await db.query(
-          'UPDATE tickets SET estado = $1, fecha_cierre = NOW() WHERE id = $2',
+          "UPDATE tickets SET estado = $1, fecha_cierre = TIMEZONE('America/Argentina/Buenos_Aires', NOW()) WHERE id = $2",
           [estado, id]
         );
       } else {
@@ -565,7 +565,7 @@ const ticketsController = {
       }
 
       await db.query(
-        'UPDATE tickets SET hora_inicio = NOW() WHERE id = $1',
+        "UPDATE tickets SET hora_inicio = TIMEZONE('America/Argentina/Buenos_Aires', NOW()) WHERE id = $1",
         [id]
       );
 
@@ -612,7 +612,7 @@ const ticketsController = {
       }
 
       await db.query(
-        'UPDATE tickets SET hora_fin = NOW() WHERE id = $1',
+        "UPDATE tickets SET hora_fin = TIMEZONE('America/Argentina/Buenos_Aires', NOW()) WHERE id = $1",
         [id]
       );
 
