@@ -25,46 +25,79 @@
         <a href="/empresas/nueva" class="btn btn-primary">Crear primera empresa</a>
       </div>
     <% } else { %>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Teléfono</th>
-              <th>Usuarios</th>
-              <th>Materiales</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% empresas.forEach(emp => { %>
-              <tr>
-                <td><strong><%= emp.nombre %></strong></td>
-                <td><%= emp.email || 'N/A' %></td>
-                <td><%= emp.telefono || 'N/A' %></td>
-                <td><%= emp.total_usuarios || 0 %></td>
-                <td><%= emp.total_materiales || 0 %></td>
-                <td>
-                  <span class="badge <%= emp.activo ? 'badge-success' : 'badge-danger' %>">
-                    <%= emp.activo ? '✅ Activa' : '❌ Inactiva' %>
-                  </span>
-                </td>
-                <td>
-                  <a href="/empresas/<%= emp.id %>" class="btn btn-sm">👁️ Ver</a>
-                  <form action="/empresas/<%= emp.id %>/toggle" method="POST" style="display: inline;">
-                    <button type="submit" class="btn btn-sm <%= emp.activo ? 'btn-warning' : 'btn-success' %>">
-                      <%= emp.activo ? '❌' : '✅' %>
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
+      <!-- Grid de empresas -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: var(--spacing-lg); margin-top: var(--spacing-lg);">
+        <% empresas.forEach(emp => { %>
+          <div class="empresa-card" style="background: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); padding: var(--spacing-lg); transition: transform 0.3s ease, box-shadow 0.3s ease; border-left: 4px solid <%= emp.activo ? 'var(--success-color)' : '#ccc' %>;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-md);">
+              <div>
+                <h3 style="margin: 0 0 8px 0; color: var(--primary-color); font-size: 1.3rem;">
+                  🏢 <%= emp.nombre %>
+                </h3>
+                <span class="badge <%= emp.activo ? 'badge-success' : 'badge-secondary' %>" style="font-size: 12px;">
+                  <%= emp.activo ? '✅ Activa' : '⏸️ Inactiva' %>
+                </span>
+              </div>
+              <form action="/empresas/<%= emp.id %>/toggle" method="POST" style="margin: 0;">
+                <button type="submit" class="btn-small <%= emp.activo ? 'btn-warning' : 'btn-success' %>" title="<%= emp.activo ? 'Desactivar' : 'Activar' %>">
+                  <%= emp.activo ? '❌' : '✅' %>
+                </button>
+              </form>
+            </div>
+
+            <!-- Info de contacto -->
+            <div style="margin-bottom: var(--spacing-md); padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--border-color);">
+              <% if (emp.email) { %>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                  <span style="color: var(--text-secondary);">📧</span>
+                  <span style="font-size: 14px;"><%= emp.email %></span>
+                </div>
+              <% } %>
+              <% if (emp.telefono) { %>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="color: var(--text-secondary);">📞</span>
+                  <span style="font-size: 14px;"><%= emp.telefono %></span>
+                </div>
+              <% } %>
+            </div>
+
+            <!-- Estadísticas -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
+              <div style="text-align: center; padding: var(--spacing-sm); background: #f5f5f5; border-radius: 8px;">
+                <div style="font-size: 24px; font-weight: bold; color: var(--primary-color);"><%= emp.total_usuarios || 0 %></div>
+                <div style="font-size: 12px; color: var(--text-secondary);">👥 Usuarios</div>
+              </div>
+              <div style="text-align: center; padding: var(--spacing-sm); background: #f5f5f5; border-radius: 8px;">
+                <div style="font-size: 24px; font-weight: bold; color: var(--primary-color);"><%= emp.total_materiales || 0 %></div>
+                <div style="font-size: 12px; color: var(--text-secondary);">📦 Equipos</div>
+              </div>
+              <div style="text-align: center; padding: var(--spacing-sm); background: #f5f5f5; border-radius: 8px;">
+                <div style="font-size: 24px; font-weight: bold; color: var(--primary-color);"><%= emp.total_sucursales || 0 %></div>
+                <div style="font-size: 12px; color: var(--text-secondary);">🏪 Sucursales</div>
+              </div>
+            </div>
+
+            <!-- Botón Ver Detalle -->
+            <a href="/empresas/<%= emp.id %>" class="btn btn-primary" style="width: 100%; text-align: center; display: block;">
+              👁️ Ver Detalle Completo
+            </a>
+          </div>
+        <% }) %>
       </div>
     <% } %>
+
+    <style>
+      .empresa-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      }
+
+      @media (max-width: 768px) {
+        .empresa-card {
+          margin-bottom: var(--spacing-md);
+        }
+      }
+    </style>
   </main>
 
   <%- include('../partials/footer') %>

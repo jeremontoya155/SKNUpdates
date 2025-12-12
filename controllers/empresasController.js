@@ -14,10 +14,12 @@ exports.index = async (req, res) => {
       `SELECT 
         e.*,
         COUNT(DISTINCT u.id) as total_usuarios,
-        COUNT(DISTINCT m.id) as total_materiales
+        COUNT(DISTINCT m.id) as total_materiales,
+        COUNT(DISTINCT s.id) as total_sucursales
        FROM empresas e
        LEFT JOIN usuarios u ON e.id = u.empresa_id
        LEFT JOIN materiales m ON e.id = m.empresa_id
+       LEFT JOIN sucursales s ON e.id = s.empresa_id
        GROUP BY e.id
        ORDER BY e.nombre`
     );

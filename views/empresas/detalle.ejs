@@ -441,14 +441,63 @@
       </div>
     </div>
 
-    <!-- Inventario -->
+    <!-- Inventario / Equipos -->
     <div id="inventario-section" class="detail-card" style="margin-top: var(--spacing-xl); scroll-margin-top: 80px;">
       <div class="detail-header">
-        <h2>📦 Inventario</h2>
+        <h2>📦 Inventario y Equipos (<%= materiales.length %>)</h2>
         <% if (stats.total_materiales > 10) { %>
           <a href="/inventario?empresa_id=<%= empresa.id %>" class="btn btn-primary">Ver Todo (<%= stats.total_materiales %>) →</a>
         <% } %>
       </div>
+
+      <!-- Filtros rápidos -->
+      <div style="padding: var(--spacing-md); border-bottom: 1px solid var(--border-color);">
+        <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap; align-items: center;">
+          <span style="font-weight: 600; color: var(--text-secondary);">Filtrar por:</span>
+          <button onclick="filtrarInventario('todos')" class="btn-filter active" data-filter="todos">
+            📦 Todos (<%= materiales.length %>)
+          </button>
+          <% 
+            const pcs = materiales.filter(m => m.categoria_nombre === 'PC de Escritorio');
+            const notebooks = materiales.filter(m => m.categoria_nombre === 'Notebooks');
+            const celulares = materiales.filter(m => m.categoria_nombre === 'Celulares');
+            const otros = materiales.filter(m => !['PC de Escritorio', 'Notebooks', 'Celulares'].includes(m.categoria_nombre));
+          %>
+          <% if (pcs.length > 0) { %>
+            <button onclick="filtrarInventario('PC de Escritorio')" class="btn-filter" data-filter="PC de Escritorio">
+              🖥️ PCs (<%= pcs.length %>)
+            </button>
+          <% } %>
+          <% if (notebooks.length > 0) { %>
+            <button onclick="filtrarInventario('Notebooks')" class="btn-filter" data-filter="Notebooks">
+              💻 Notebooks (<%= notebooks.length %>)
+            </button>
+          <% } %>
+          <% if (celulares.length > 0) { %>
+            <button onclick="filtrarInventario('Celulares')" class="btn-filter" data-filter="Celulares">
+              📱 Celulares (<%= celulares.length %>)
+            </button>
+          <% } %>
+          <% if (otros.length > 0) { %>
+            <button onclick="filtrarInventario('otros')" class="btn-filter" data-filter="otros">
+              📋 Otros (<%= otros.length %>)
+            </button>
+          <% } %>
+        </div>
+
+        <!-- Filtro por sucursal -->
+        <% if (sucursales && sucursales.length > 1) { %>
+          <div style="margin-top: var(--spacing-sm);">
+            <select id="filtroSucursal" onchange="filtrarPorSucursal(this.value)" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+              <option value="todas">🏪 Todas las sucursales</option>
+              <% sucursales.forEach(suc => { %>
+                <option value="<%= suc.id %>"><%= suc.nombre %></option>
+              <% }) %>
+            </select>
+          </div>
+        <% } %>
+      </div>
+
       <div class="detail-content">
         <% if (materiales.length === 0) { %>
           <div class="empty-state">
@@ -456,29 +505,44 @@
           </div>
         <% } else { %>
           <div class="table-container">
-            <table>
+            <table id="tabla-inventario">
               <thead>
                 <tr>
-                  <th>Material</th>
-                  <th>Categoría</th>
+                  <th>Tipo</th>
+                  <th>Equipo/Material</th>
+                  <th>Marca/Modelo</th>
+                  <th>Sucursal</th>
                   <th>Stock</th>
-                  <th>Ubicación</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                <% materiales.slice(0, 50).forEach(m => { %>
-                  <tr <%= m.stock_actual < m.stock_minimo ? 'class="stock-bajo"' : '' %>>
-                    <td><strong><%= m.nombre %></strong></td>
-                    <td><%= m.categoria_nombre || 'N/A' %></td>
+                <% materiales.forEach(m => { %>
+                  <tr class="item-inventario" 
+                      data-categoria="<%= m.categoria_nombre %>" 
+                      data-sucursal="<%= m.sucursal_id || '' %>"
+                      <%= m.stock_actual < m.stock_minimo ? 'style="background: #fff3e0;"' : '' %>>
                     <td>
-                      <% if (m.stock_actual < m.stock_minimo) { %>
-                        <span class="stock-bajo"><%= m.stock_actual %></span>
+                      <span class="badge badge-info"><%= m.categoria_nombre || 'N/A' %></span>
+                    </td>
+                    <td><strong><%= m.nombre %></strong></td>
+                    <td>
+                      <% if (m.marca || m.modelo) { %>
+                        <%= m.marca || '' %> <%= m.modelo || '' %>
                       <% } else { %>
-                        <%= m.stock_actual %>
+                        <span style="color: var(--text-secondary);">-</span>
                       <% } %>
                     </td>
-                    <td><%= m.ubicacion || 'N/A' %></td>
+                    <td><%= m.sucursal_nombre || 'Sin asignar' %></td>
+                    <td>
+                      <% if (m.stock_actual < m.stock_minimo) { %>
+                        <span class="badge badge-danger"><%= m.stock_actual %></span>
+                      <% } else if (m.stock_actual === 0) { %>
+                        <span class="badge badge-secondary">0</span>
+                      <% } else { %>
+                        <span class="badge badge-success"><%= m.stock_actual %></span>
+                      <% } %>
+                    </td>
                     <td>
                       <a href="/inventario/<%= m.id %>" class="btn-small">Ver</a>
                     </td>
@@ -607,7 +671,95 @@
         }
       });
     });
+
+    // Filtrar inventario por categoría
+    function filtrarInventario(categoria) {
+      const items = document.querySelectorAll('.item-inventario');
+      const botones = document.querySelectorAll('.btn-filter');
+      
+      // Actualizar botones activos
+      botones.forEach(btn => {
+        if (btn.dataset.filter === categoria) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Filtrar items
+      items.forEach(item => {
+        const itemCategoria = item.dataset.categoria;
+        if (categoria === 'todos') {
+          item.style.display = '';
+        } else if (categoria === 'otros') {
+          const esEquipo = ['PC de Escritorio', 'Notebooks', 'Celulares'].includes(itemCategoria);
+          item.style.display = esEquipo ? 'none' : '';
+        } else {
+          item.style.display = itemCategoria === categoria ? '' : 'none';
+        }
+      });
+    }
+
+    // Filtrar por sucursal
+    let categoriaActual = 'todos';
+    function filtrarPorSucursal(sucursalId) {
+      const items = document.querySelectorAll('.item-inventario');
+      
+      items.forEach(item => {
+        const itemSucursal = item.dataset.sucursal;
+        const itemCategoria = item.dataset.categoria;
+        
+        let mostrarPorSucursal = sucursalId === 'todas' || itemSucursal === sucursalId;
+        let mostrarPorCategoria = true;
+        
+        if (categoriaActual !== 'todos') {
+          if (categoriaActual === 'otros') {
+            mostrarPorCategoria = !['PC de Escritorio', 'Notebooks', 'Celulares'].includes(itemCategoria);
+          } else {
+            mostrarPorCategoria = itemCategoria === categoriaActual;
+          }
+        }
+        
+        item.style.display = (mostrarPorSucursal && mostrarPorCategoria) ? '' : 'none';
+      });
+    }
+
+    // Guardar categoría actual al filtrar
+    const botonesFilter = document.querySelectorAll('.btn-filter');
+    botonesFilter.forEach(btn => {
+      btn.addEventListener('click', function() {
+        categoriaActual = this.dataset.filter;
+      });
+    });
   </script>
+
+  <style>
+    .btn-filter {
+      padding: 8px 16px;
+      border: 2px solid var(--border-color);
+      background: white;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .btn-filter:hover {
+      border-color: var(--primary-color);
+      background: rgba(255, 107, 53, 0.05);
+    }
+
+    .btn-filter.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+
+    .item-inventario {
+      transition: opacity 0.3s ease;
+    }
+  </style>
 </body>
 </html>
         <button class="tab-btn active" onclick="showTab('usuarios')">👥 Usuarios (<%= usuarios.length %>)</button>
