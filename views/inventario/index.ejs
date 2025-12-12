@@ -19,7 +19,7 @@
     <% } %>
 
     <div class="page-header">
-      <h1>Inventario de Materiales</h1>
+      <h1>📦 Inventario de Materiales y Equipos</h1>
       <div class="actions">
         <% if (user.rol === 'skn_admin' || user.rol === 'empresa_admin') { %>
           <a href="/inventario/nuevo" class="btn btn-primary">+ Nuevo Material</a>
@@ -27,6 +27,16 @@
         <% } %>
       </div>
     </div>
+
+    <!-- Indicador de filtro activo -->
+    <% if (filtros.empresa && filtros.empresa !== 'todas') { %>
+      <div class="alert alert-info" style="display: flex; align-items: center; justify-content: space-between;">
+        <span>
+          🔍 Filtrando por empresa específica (<%= materiales.length %> items encontrados)
+        </span>
+        <a href="/inventario" class="btn btn-small">❌ Quitar filtro</a>
+      </div>
+    <% } %>
 
     <!-- Buscador y Filtros -->
     <div class="search-filters">
@@ -75,61 +85,138 @@
       </form>
     </div>
 
-    <div class="table-responsive">
-      <table>
+    <style>
+      /* Scroll horizontal en todos los dispositivos si es necesario */
+      .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Tabla base */
+      .inventario-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px; /* Garantiza scroll en mobile si no cabe */
+      }
+      
+      .inventario-table th,
+      .inventario-table td {
+        padding: 12px;
+        text-align: left;
+        vertical-align: middle;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      
+      .inventario-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        color: #555;
+        white-space: nowrap;
+      }
+      
+      /* Columnas con ancho específico */
+      .col-codigo { width: 120px; }
+      .col-categoria { width: 130px; }
+      .col-empresa { width: 140px; }
+      .col-ubicacion { width: 160px; }
+      .col-stock { width: 80px; text-align: center; }
+      .col-acciones { width: 100px; text-align: center; }
+      
+      /* Columna nombre flexible */
+      .nombre-col {
+        min-width: 220px;
+        white-space: normal;
+      }
+      
+      .codigo-cell {
+        font-size: 12px;
+        color: #666;
+        font-family: 'Courier New', monospace;
+      }
+
+      /* Mobile: mantener scroll horizontal */
+      @media (max-width: 768px) {
+        .inventario-table th,
+        .inventario-table td {
+          padding: 10px 8px;
+          font-size: 13px;
+        }
+        
+        .nombre-col {
+          min-width: 180px;
+        }
+      }
+    </style>
+
+    <div class="table-container">
+      <table class="inventario-table">
         <thead>
           <tr>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Categoría</th>
+            <th class="col-codigo">Código</th>
+            <th class="col-nombre">Nombre</th>
+            <th class="col-categoria">Categoría</th>
             <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
-              <th>Empresa</th>
+              <th class="col-empresa">Empresa</th>
             <% } %>
-            <th>🏪 Sucursal</th>
-            <th>Stock Actual</th>
-            <th>Stock Mínimo</th>
-            <th>Unidad</th>
-            <th>Precio Unit.</th>
-            <th>Acciones</th>
+            <th class="col-ubicacion">Ubicación</th>
+            <th class="col-stock">Stock</th>
+            <th class="col-acciones">Acciones</th>
           </tr>
         </thead>
         <tbody>
           <% materiales.forEach(material => { %>
-            <tr class="<%= material.stock_actual <= material.stock_minimo ? 'stock-bajo' : '' %>">
-              <td><%= material.codigo || '-' %></td>
-              <td><%= material.nombre %></td>
-              <td><%= material.categoria_nombre || 'Sin categoría' %></td>
+            <tr class="<%= material.stock_actual <= material.stock_minimo && material.stock_actual > 0 ? 'stock-bajo' : '' %>">
+              <td class="codigo-cell" title="<%= material.codigo || 'Sin código' %>">
+                <%= material.codigo || '-' %>
+              </td>
+              <td class="nombre-col">
+                <div style="font-weight: 600; margin-bottom: 2px;"><%= material.nombre %></div>
+                <% if (material.marca || material.modelo) { %>
+                  <div style="font-size: 12px; color: #666;">
+                    <%= [material.marca, material.modelo].filter(Boolean).join(' ') %>
+                  </div>
+                <% } %>
+              </td>
+              <td>
+                <span class="badge badge-primary" style="font-size: 11px; padding: 4px 8px;">
+                  <%= material.categoria_nombre || 'N/A' %>
+                </span>
+              </td>
               <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
-                <td><%= material.empresa_nombre || '-' %></td>
+                <td title="<%= material.empresa_nombre || 'Sin empresa' %>">
+                  <%= material.empresa_nombre || '-' %>
+                </td>
               <% } %>
-              <td>
+              <td title="<%= material.sucursal_nombre || 'Sin sucursal' %>">
                 <% if (material.sucursal_nombre) { %>
-                  <span class="badge badge-info"><%= material.sucursal_nombre %></span>
+                  🏪 <%= material.sucursal_nombre %>
                 <% } else { %>
-                  <span style="color: #999;">Almacén Central</span>
+                  -
                 <% } %>
               </td>
-              <td>
-                <%= material.stock_actual %>
-                <% if (material.stock_actual <= material.stock_minimo && material.stock_actual > 0) { %>
-                  <span class="badge badge-warning">Bajo</span>
-                <% } else if (material.stock_actual === 0) { %>
-                  <span class="badge badge-danger">Agotado</span>
+              <td style="text-align: center;">
+                <% if (material.stock_actual === 0) { %>
+                  <span class="badge badge-danger"><%= material.stock_actual %></span>
+                <% } else if (material.stock_actual <= material.stock_minimo) { %>
+                  <span class="badge badge-warning"><%= material.stock_actual %></span>
+                <% } else { %>
+                  <span class="badge badge-success"><%= material.stock_actual %></span>
                 <% } %>
               </td>
-              <td><%= material.stock_minimo %></td>
-              <td><%= material.unidad_medida || '-' %></td>
-              <td>$<%= parseFloat(material.precio_unitario || 0).toFixed(2) %></td>
-              <td>
-                <a href="/inventario/<%= material.id %>" class="btn-small">Ver Detalle</a>
+              <td style="text-align: center;">
+                <a href="/inventario/<%= material.id %>" class="btn-small" style="padding: 6px 12px;">Ver</a>
               </td>
             </tr>
           <% }) %>
           
           <% if (materiales.length === 0) { %>
             <tr>
-              <td colspan="<%= (user.rol === 'skn_admin' || user.rol === 'skn_user') ? '9' : '8' %>" style="text-align: center;">
-                No hay materiales que coincidan con los filtros
+              <td colspan="<%= (user.rol === 'skn_admin' || user.rol === 'skn_user') ? '7' : '6' %>" style="text-align: center; padding: var(--spacing-xl);">
+                <div class="empty-state">
+                  <p style="font-size: 18px; color: var(--text-secondary);">📭 No hay materiales que coincidan con los filtros</p>
+                </div>
               </td>
             </tr>
           <% } %>

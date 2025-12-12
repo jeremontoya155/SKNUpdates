@@ -5,7 +5,10 @@ const inventarioController = {
   index: async (req, res) => {
     try {
       const user = req.session.user;
-      const { buscar, categoria, empresa, stock } = req.query;
+      const { buscar, categoria, empresa, empresa_id, stock } = req.query;
+      
+      // Unificar empresa y empresa_id
+      const empresaFiltro = empresa_id || empresa;
       
       let query = `
         SELECT m.*, c.nombre as categoria_nombre, e.nombre as empresa_nombre, s.nombre as sucursal_nombre
@@ -22,9 +25,9 @@ const inventarioController = {
       // Filtro por empresa: SKN ve todo, empresas solo ven lo suyo
       if (user.rol === 'skn_admin' || user.rol === 'skn_user') {
         // SKN puede filtrar por empresa específica o ver todas
-        if (empresa && empresa !== 'todas') {
+        if (empresaFiltro && empresaFiltro !== 'todas') {
           query += ` AND m.empresa_id = $${paramIndex}`;
-          params.push(parseInt(empresa, 10));
+          params.push(parseInt(empresaFiltro, 10));
           paramIndex++;
         }
       } else {
@@ -82,7 +85,7 @@ const inventarioController = {
         materiales: result.rows,
         categorias: categorias.rows,
         empresas: empresas,
-        filtros: { buscar, categoria, empresa, stock }
+        filtros: { buscar, categoria, empresa: empresaFiltro, stock }
       });
     } catch (error) {
       console.error('Error al listar materiales:', error);
