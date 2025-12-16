@@ -15,6 +15,14 @@
       <a href="/empresas/nueva" class="btn btn-primary">➕ Nueva Empresa</a>
     </div>
 
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
     <div class="alert alert-warning">
       ⚠️ Solo usuarios SKN pueden crear y gestionar empresas
     </div>
@@ -34,15 +42,31 @@
                 <h3 style="margin: 0 0 8px 0; color: var(--primary-color); font-size: 1.3rem;">
                   🏢 <%= emp.nombre %>
                 </h3>
-                <span class="badge <%= emp.activo ? 'badge-success' : 'badge-secondary' %>" style="font-size: 12px;">
-                  <%= emp.activo ? '✅ Activa' : '⏸️ Inactiva' %>
-                </span>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <span class="badge <%= emp.activo ? 'badge-success' : 'badge-secondary' %>" style="font-size: 12px;">
+                    <%= emp.activo ? '✅ Activa' : '⏸️ Inactiva' %>
+                  </span>
+                  <% if (typeof emp.abonada !== 'undefined') { %>
+                    <span class="badge <%= emp.abonada ? 'badge-primary' : 'badge-warning' %>" style="font-size: 12px;">
+                      <%= emp.abonada ? '💳 Abonada' : '💳 No Abonada' %>
+                    </span>
+                  <% } %>
+                </div>
               </div>
-              <form action="/empresas/<%= emp.id %>/toggle" method="POST" style="margin: 0;">
-                <button type="submit" class="btn-small <%= emp.activo ? 'btn-warning' : 'btn-success' %>" title="<%= emp.activo ? 'Desactivar' : 'Activar' %>">
-                  <%= emp.activo ? '❌' : '✅' %>
-                </button>
-              </form>
+              <div style="display: flex; gap: 4px;">
+                <form action="/empresas/<%= emp.id %>/toggle" method="POST" style="margin: 0;">
+                  <button type="submit" class="btn-small <%= emp.activo ? 'btn-warning' : 'btn-success' %>" title="<%= emp.activo ? 'Desactivar' : 'Activar' %>">
+                    <%= emp.activo ? '❌' : '✅' %>
+                  </button>
+                </form>
+                <% if (user.rol === 'skn_admin') { %>
+                  <form action="/empresas/<%= emp.id %>/toggle-abonada" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn-small btn-info" title="Cambiar estado de abonada">
+                      💳
+                    </button>
+                  </form>
+                <% } %>
+              </div>
             </div>
 
             <!-- Info de contacto -->
@@ -77,10 +101,15 @@
               </div>
             </div>
 
-            <!-- Botón Ver Detalle -->
-            <a href="/empresas/<%= emp.id %>" class="btn btn-primary" style="width: 100%; text-align: center; display: block;">
-              👁️ Ver Detalle Completo
-            </a>
+            <!-- Botones de Acción -->
+            <div style="display: flex; gap: 8px;">
+              <a href="/empresas/<%= emp.id %>" class="btn btn-primary" style="flex: 1; text-align: center;">
+                👁️ Ver Detalle
+              </a>
+              <a href="/empresas/<%= emp.id %>/editar" class="btn btn-secondary" style="padding: 10px 16px;">
+                ✏️
+              </a>
+            </div>
           </div>
         <% }) %>
       </div>

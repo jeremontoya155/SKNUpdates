@@ -90,62 +90,127 @@
       .table-container {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        margin-top: 20px;
       }
 
       /* Tabla base */
       .inventario-table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 800px; /* Garantiza scroll en mobile si no cabe */
+        min-width: 1000px; /* Garantiza scroll en mobile si no cabe */
+        table-layout: fixed;
       }
       
       .inventario-table th,
       .inventario-table td {
-        padding: 12px;
+        padding: 12px 8px;
         text-align: left;
         vertical-align: middle;
         border-bottom: 1px solid #e0e0e0;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       
       .inventario-table th {
         background: #f8f9fa;
         font-weight: 600;
-        font-size: 13px;
+        font-size: 12px;
         text-transform: uppercase;
         color: #555;
         white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 10;
       }
       
-      /* Columnas con ancho específico */
-      .col-codigo { width: 120px; }
-      .col-categoria { width: 130px; }
-      .col-empresa { width: 140px; }
-      .col-ubicacion { width: 160px; }
-      .col-stock { width: 80px; text-align: center; }
-      .col-acciones { width: 100px; text-align: center; }
+      /* Columnas con ancho específico y fijo */
+      .inventario-table .col-codigo { 
+        width: 140px;
+        max-width: 140px;
+      }
       
-      /* Columna nombre flexible */
-      .nombre-col {
-        min-width: 220px;
+      .inventario-table .col-nombre { 
+        width: 250px;
+        max-width: 250px;
         white-space: normal;
+      }
+      
+      .inventario-table .col-categoria { 
+        width: 130px;
+        max-width: 130px;
+      }
+      
+      .inventario-table .col-empresa { 
+        width: 150px;
+        max-width: 150px;
+      }
+      
+      .inventario-table .col-ubicacion { 
+        width: 160px;
+        max-width: 160px;
+      }
+      
+      .inventario-table .col-stock { 
+        width: 90px;
+        max-width: 90px;
+        text-align: center;
+      }
+      
+      .inventario-table .col-acciones { 
+        width: 100px;
+        max-width: 100px;
+        text-align: center;
       }
       
       .codigo-cell {
         font-size: 12px;
         color: #666;
         font-family: 'Courier New', monospace;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      /* Asegurar que los badges se vean bien */
+      .inventario-table .badge {
+        display: inline-block;
+        white-space: nowrap;
+      }
+      
+      /* Estilos para filas */
+      .inventario-table tbody tr {
+        transition: background-color 0.2s ease;
+      }
+      
+      .inventario-table tbody tr:hover {
+        background-color: #f5f5f5;
+      }
+      
+      .inventario-table tbody tr.stock-bajo {
+        background-color: #fff9e6;
+      }
+      
+      .inventario-table tbody tr.stock-bajo:hover {
+        background-color: #fff3cc;
       }
 
       /* Mobile: mantener scroll horizontal */
       @media (max-width: 768px) {
         .inventario-table th,
         .inventario-table td {
-          padding: 10px 8px;
-          font-size: 13px;
+          padding: 10px 6px;
+          font-size: 12px;
         }
         
-        .nombre-col {
-          min-width: 180px;
+        .inventario-table .col-nombre {
+          width: 200px;
+          max-width: 200px;
+        }
+        
+        .inventario-table .col-codigo {
+          width: 120px;
+          max-width: 120px;
         }
       }
     </style>
@@ -168,10 +233,12 @@
         <tbody>
           <% materiales.forEach(material => { %>
             <tr class="<%= material.stock_actual <= material.stock_minimo && material.stock_actual > 0 ? 'stock-bajo' : '' %>">
-              <td class="codigo-cell" title="<%= material.codigo || 'Sin código' %>">
-                <%= material.codigo || '-' %>
+              <td class="col-codigo">
+                <span class="codigo-cell" title="<%= material.codigo || 'Sin código' %>">
+                  <%= material.codigo || '-' %>
+                </span>
               </td>
-              <td class="nombre-col">
+              <td class="col-nombre">
                 <div style="font-weight: 600; margin-bottom: 2px;"><%= material.nombre %></div>
                 <% if (material.marca || material.modelo) { %>
                   <div style="font-size: 12px; color: #666;">
@@ -179,24 +246,24 @@
                   </div>
                 <% } %>
               </td>
-              <td>
+              <td class="col-categoria">
                 <span class="badge badge-primary" style="font-size: 11px; padding: 4px 8px;">
                   <%= material.categoria_nombre || 'N/A' %>
                 </span>
               </td>
               <% if (user.rol === 'skn_admin' || user.rol === 'skn_user') { %>
-                <td title="<%= material.empresa_nombre || 'Sin empresa' %>">
+                <td class="col-empresa" title="<%= material.empresa_nombre || 'Sin empresa' %>">
                   <%= material.empresa_nombre || '-' %>
                 </td>
               <% } %>
-              <td title="<%= material.sucursal_nombre || 'Sin sucursal' %>">
+              <td class="col-ubicacion" title="<%= material.sucursal_nombre || 'Sin sucursal' %>">
                 <% if (material.sucursal_nombre) { %>
                   🏪 <%= material.sucursal_nombre %>
                 <% } else { %>
                   -
                 <% } %>
               </td>
-              <td style="text-align: center;">
+              <td class="col-stock">
                 <% if (material.stock_actual === 0) { %>
                   <span class="badge badge-danger"><%= material.stock_actual %></span>
                 <% } else if (material.stock_actual <= material.stock_minimo) { %>
@@ -205,7 +272,7 @@
                   <span class="badge badge-success"><%= material.stock_actual %></span>
                 <% } %>
               </td>
-              <td style="text-align: center;">
+              <td class="col-acciones">
                 <a href="/inventario/<%= material.id %>" class="btn-small" style="padding: 6px 12px;">Ver</a>
               </td>
             </tr>

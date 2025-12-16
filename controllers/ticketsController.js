@@ -3,20 +3,23 @@ const { deleteImage, getThumbnailUrl, getPreviewUrl } = require('../config/cloud
 
 const ticketsController = {
   // Listar tickets
-  // SKN: Ve TODOS los tickets de todas las empresas
+  // SKN Admin/Subadmin: Ve TODOS los tickets de todas las empresas
+  // SKN User: Solo ve tickets asignados a él
   // Empresa: Solo ve SUS tickets
   index: async (req, res) => {
     try {
       const user = req.session.user;
-      const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user';
+      const esSKNAdmin = ['skn_admin', 'skn_subadmin'].includes(user.rol);
+      const esSKNUser = user.rol === 'skn_user';
+      const esSKN = esSKNAdmin || esSKNUser;
       const { buscar, estado, prioridad, empresa, fecha_desde, fecha_hasta } = req.query;
 
       let query;
       let params = [];
       let paramIndex = 1;
 
-      if (esSKN) {
-        // SKN ve todos los tickets con información de empresa
+      if (esSKNAdmin) {
+        // SKN Admin/Subadmin ve todos los tickets con información de empresa
         query = `
           SELECT 
             t.*, 
@@ -30,12 +33,28 @@ const ticketsController = {
           WHERE 1=1
         `;
         
-        // Filtro por empresa (solo para SKN)
+        // Filtro por empresa (solo para SKN Admin/Subadmin)
         if (empresa) {
           query += ` AND t.empresa_id = $${paramIndex}`;
           params.push(parseInt(empresa, 10));
           paramIndex++;
         }
+      } else if (esSKNUser) {
+        // SKN User solo ve tickets asignados a él
+        query = `
+          SELECT 
+            t.*, 
+            e.nombre as empresa_nombre,
+            u.nombre as solicitante_nombre, 
+            ua.nombre as asignado_nombre 
+          FROM tickets t 
+          JOIN empresas e ON t.empresa_id = e.id
+          LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
+          LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
+          WHERE t.usuario_asignado = $${paramIndex}
+        `;
+        params.push(user.id);
+        paramIndex++;
       } else {
         // Empresa solo ve sus tickets
         query = `
@@ -132,7 +151,7 @@ const ticketsController = {
   showNuevo: async (req, res) => {
     try {
       const user = req.session.user;
-      const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user';
+      const esSKN = ['skn_admin', 'skn_subadmin', 'skn_user'].includes(user.rol);
 
       let empresas = [];
       
@@ -149,10 +168,16 @@ const ticketsController = {
         'SELECT id, nombre, descripcion, requiere_instalacion FROM tipos_trabajo WHERE activo = true ORDER BY nombre'
       );
 
+      // Obtener situaciones de soporte activas
+      const situaciones = await db.query(
+        'SELECT id, nombre, descripcion, tipo_soporte, color FROM situaciones_soporte WHERE activo = true ORDER BY tipo_soporte, orden, nombre'
+      );
+
       res.render('tickets/nuevo', { 
         title: 'Nuevo Ticket',
         empresas,
         tiposTrabajo: tiposTrabajo.rows,
+        situaciones: situaciones.rows,
         esSKN,
         user,
         error: null
@@ -165,18 +190,12 @@ const ticketsController = {
 
   // Crear ticket
   crear: async (req, res) => {
-    const { titulo, descripcion, prioridad, empresa_id, tipo_soporte, tipo_trabajo_id } = req.body;
+    const { titulo, descripcion, prioridad, empresa_id, tipo_soporte, tipo_trabajo_id, situacion_soporte_id } = req.body;
     const user = req.session.user;
-    const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user';
+    const esSKN = ['skn_admin', 'skn_subadmin', 'skn_user'].includes(user.rol);
     const file = req.file; // Imagen inicial
 
     try {
-      // Validación: Si es soporte físico, la imagen es OBLIGATORIA
-      if (tipo_soporte === 'fisico' && !file) {
-        req.session.error = 'Para tickets de soporte físico es obligatorio adjuntar una imagen del problema';
-        return res.redirect('/tickets/nuevo');
-      }
-
       let empresaFinal;
       
       if (esSKN) {
@@ -187,11 +206,11 @@ const ticketsController = {
         empresaFinal = user.empresa_id;
       }
 
-      // Insertar ticket con tipo de soporte y tipo de trabajo
+      // Insertar ticket con tipo de soporte, tipo de trabajo y situación
       const ticketResult = await db.query(
-        `INSERT INTO tickets (empresa_id, usuario_solicitante, titulo, descripcion, prioridad, estado, tipo_soporte, tipo_trabajo_id) 
-         VALUES ($1, $2, $3, $4, $5, 'abierto', $6, $7) RETURNING id`,
-        [empresaFinal, user.id, titulo, descripcion, prioridad || 'media', tipo_soporte || 'remoto', tipo_trabajo_id || null]
+        `INSERT INTO tickets (empresa_id, usuario_solicitante, titulo, descripcion, prioridad, estado, tipo_soporte, tipo_trabajo_id, situacion_soporte_id) 
+         VALUES ($1, $2, $3, $4, $5, 'abierto', $6, $7, $8) RETURNING id`,
+        [empresaFinal, user.id, titulo, descripcion, prioridad || 'media', tipo_soporte || 'remoto', tipo_trabajo_id || null, situacion_soporte_id || null]
       );
 
       const ticketId = ticketResult.rows[0].id;
@@ -221,14 +240,16 @@ const ticketsController = {
   detalle: async (req, res) => {
     const { id } = req.params;
     const user = req.session.user;
-    const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user';
+    const esSKNAdmin = ['skn_admin', 'skn_subadmin'].includes(user.rol);
+    const esSKNUser = user.rol === 'skn_user';
+    const esSKN = esSKNAdmin || esSKNUser;
 
     try {
       let query;
       let params;
 
-      if (esSKN) {
-        // SKN puede ver cualquier ticket
+      if (esSKNAdmin) {
+        // SKN Admin/Subadmin puede ver cualquier ticket
         query = `
           SELECT 
             t.*, 
@@ -246,6 +267,25 @@ const ticketsController = {
           WHERE t.id = $1
         `;
         params = [id];
+      } else if (esSKNUser) {
+        // SKN User solo puede ver tickets asignados a él
+        query = `
+          SELECT 
+            t.*, 
+            e.nombre as empresa_nombre,
+            u.nombre as solicitante_nombre, 
+            ua.nombre as asignado_nombre,
+            tt.nombre as tipo_trabajo_nombre,
+            tt.descripcion as tipo_trabajo_descripcion,
+            tt.color as tipo_trabajo_color
+          FROM tickets t 
+          JOIN empresas e ON t.empresa_id = e.id
+          LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
+          LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
+          LEFT JOIN tipos_trabajo tt ON t.tipo_trabajo_id = tt.id
+          WHERE t.id = $1 AND t.usuario_asignado = $2
+        `;
+        params = [id, user.id];
       } else {
         // Empresa solo ve sus tickets
         query = `
@@ -285,9 +325,9 @@ const ticketsController = {
       let usuariosSKN = [];
       if (esSKN) {
         const result = await db.query(
-          `SELECT id, nombre as nombre_completo 
+          `SELECT id, nombre as nombre_completo, rol
            FROM usuarios 
-           WHERE (rol = 'skn_admin' OR rol = 'skn_user') AND activo = true 
+           WHERE (rol = 'skn_admin' OR rol = 'skn_subadmin' OR rol = 'skn_user') AND activo = true 
            ORDER BY nombre`
         );
         usuariosSKN = result.rows;
@@ -351,8 +391,67 @@ const ticketsController = {
         return res.status(403).send('Solo usuarios SKN pueden cambiar el estado de tickets');
       }
 
-      // Si el estado es cerrado, actualizar fecha de cierre
+      // Si se intenta poner en proceso, verificar si es presencial y requiere checklist
+      if (estado === 'en_proceso') {
+        const ticketInfo = await db.query(
+          `SELECT t.tipo_soporte, s.requiere_materiales, t.situacion_soporte_id
+           FROM tickets t
+           LEFT JOIN situaciones_soporte s ON t.situacion_soporte_id = s.id
+           WHERE t.id = $1`,
+          [id]
+        );
+
+        const ticket = ticketInfo.rows[0];
+
+        // Si es físico/presencial y requiere materiales, verificar que el checklist esté completo
+        if (ticket.tipo_soporte === 'fisico' && ticket.requiere_materiales && ticket.situacion_soporte_id) {
+          // Verificar si hay materiales obligatorios sin marcar
+          const materialesObligatorios = await db.query(
+            `SELECT cm.id, cm.nombre
+             FROM checklist_materiales cm
+             WHERE cm.situacion_id = $1 AND cm.obligatorio = true
+             AND cm.id NOT IN (
+               SELECT material_id 
+               FROM ticket_checklist_materiales 
+               WHERE ticket_id = $2 AND llevado = true
+             )`,
+            [ticket.situacion_soporte_id, id]
+          );
+
+          if (materialesObligatorios.rows.length > 0) {
+            req.session.error = '⚠️ Debes completar el checklist de materiales antes de iniciar el ticket. Ve a "Ver Checklist" y marca los materiales que llevarás.';
+            return res.redirect(`/tickets/${id}`);
+          }
+        }
+      }
+
+      // Si se intenta cerrar, verificar si es presencial y tiene imágenes
       if (estado === 'cerrado') {
+        const ticketInfo = await db.query(
+          `SELECT t.tipo_soporte 
+           FROM tickets t
+           WHERE t.id = $1`,
+          [id]
+        );
+
+        const ticket = ticketInfo.rows[0];
+
+        // Si es físico/presencial, verificar que tenga al menos una imagen
+        if (ticket.tipo_soporte === 'fisico') {
+          const imagenes = await db.query(
+            `SELECT COUNT(*) as total
+             FROM tickets_imagenes
+             WHERE ticket_id = $1`,
+            [id]
+          );
+
+          if (parseInt(imagenes.rows[0].total) === 0) {
+            req.session.error = '⚠️ Para cerrar un ticket presencial debes subir al menos una imagen del trabajo realizado.';
+            return res.redirect(`/tickets/${id}`);
+          }
+        }
+
+        // Actualizar estado a cerrado con fecha
         await db.query(
           "UPDATE tickets SET estado = $1, fecha_cierre = TIMEZONE('America/Argentina/Buenos_Aires', NOW()) WHERE id = $2",
           [estado, id]
@@ -386,9 +485,11 @@ const ticketsController = {
         return res.status(403).send('Solo usuarios SKN pueden asignar tickets');
       }
 
+      // Solo asignar el usuario, NO cambiar el estado
+      // El técnico asignado deberá cambiar manualmente a "en_proceso" después de completar el checklist
       await db.query(
-        'UPDATE tickets SET usuario_asignado = $1, estado = $2 WHERE id = $3',
-        [usuario_asignado, 'en_proceso', id]
+        'UPDATE tickets SET usuario_asignado = $1 WHERE id = $2',
+        [usuario_asignado, id]
       );
 
       req.session.message = 'Ticket asignado exitosamente';
@@ -412,9 +513,11 @@ const ticketsController = {
         return res.status(403).send('Solo usuarios SKN pueden asignarse tickets');
       }
 
+      // Solo asignar el usuario, NO cambiar el estado
+      // El técnico deberá cambiar manualmente a "en_proceso" después de completar el checklist
       await db.query(
-        'UPDATE tickets SET usuario_asignado = $1, estado = $2 WHERE id = $3',
-        [user.id, 'en_proceso', id]
+        'UPDATE tickets SET usuario_asignado = $1 WHERE id = $2',
+        [user.id, id]
       );
 
       req.session.message = 'Te has asignado el ticket exitosamente';
@@ -557,10 +660,15 @@ const ticketsController = {
         return res.redirect(`/tickets/${id}`);
       }
 
-      // Verificar que sea soporte físico
-      const ticket = await db.query('SELECT tipo_soporte FROM tickets WHERE id = $1', [id]);
+      // Verificar que sea soporte físico y que esté en proceso
+      const ticket = await db.query('SELECT tipo_soporte, estado FROM tickets WHERE id = $1', [id]);
       if (ticket.rows.length === 0 || ticket.rows[0].tipo_soporte !== 'fisico') {
         req.session.error = 'Solo para tickets de soporte físico';
+        return res.redirect(`/tickets/${id}`);
+      }
+
+      if (ticket.rows[0].estado === 'abierto') {
+        req.session.error = '⚠️ Debes cambiar el ticket a "En Proceso" antes de registrar la hora de inicio. Recuerda completar el checklist de materiales primero.';
         return res.redirect(`/tickets/${id}`);
       }
 

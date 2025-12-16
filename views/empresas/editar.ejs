@@ -11,30 +11,30 @@
 
   <main class="container">
     <div class="page-header">
-      <h1>➕ Nueva Empresa</h1>
+      <h1>✏️ Editar Empresa</h1>
       <a href="/empresas" class="btn btn-secondary">⬅️ Volver</a>
     </div>
 
     <div class="alert alert-warning">
-      ⚠️ Solo usuarios SKN pueden crear empresas
+      ⚠️ Solo usuarios SKN pueden editar empresas
     </div>
 
     <% if (error) { %>
       <div class="alert alert-error"><%= error %></div>
     <% } %>
 
-    <form action="/empresas/nueva" method="POST">
+    <form action="/empresas/<%= empresa.id %>/editar" method="POST">
       <h3>📋 Información General</h3>
       
       <div class="form-row">
         <div class="form-group">
           <label for="nombre">Nombre de la Empresa *</label>
-          <input type="text" id="nombre" name="nombre" required placeholder="Ej: Corsider SA">
+          <input type="text" id="nombre" name="nombre" value="<%= empresa.nombre %>" required placeholder="Ej: Corsider SA">
         </div>
 
         <div class="form-group">
           <label for="cuit">CUIT</label>
-          <input type="text" id="cuit" name="cuit" placeholder="20-12345678-9" maxlength="13">
+          <input type="text" id="cuit" name="cuit" value="<%= empresa.cuit || '' %>" placeholder="20-12345678-9" maxlength="13">
           <small>Formato: 20-12345678-9</small>
         </div>
       </div>
@@ -42,12 +42,12 @@
       <div class="form-row">
         <div class="form-group">
           <label for="telefono">Teléfono *</label>
-          <input type="text" id="telefono" name="telefono" required placeholder="(011) 1234-5678">
+          <input type="text" id="telefono" name="telefono" value="<%= empresa.telefono || '' %>" required placeholder="(011) 1234-5678">
         </div>
 
         <div class="form-group">
           <label for="email">Email *</label>
-          <input type="email" id="email" name="email" required placeholder="contacto@empresa.com">
+          <input type="email" id="email" name="email" value="<%= empresa.email || '' %>" required placeholder="contacto@empresa.com">
         </div>
       </div>
 
@@ -55,23 +55,23 @@
 
       <div class="form-group">
         <label for="direccion">Dirección *</label>
-        <input type="text" id="direccion" name="direccion" required placeholder="Calle 123, Número 456">
+        <input type="text" id="direccion" name="direccion" value="<%= empresa.direccion || '' %>" required placeholder="Calle 123, Número 456">
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label for="ciudad">Ciudad *</label>
-          <input type="text" id="ciudad" name="ciudad" required placeholder="Ej: Buenos Aires">
+          <input type="text" id="ciudad" name="ciudad" value="<%= empresa.ciudad || '' %>" required placeholder="Ej: Buenos Aires">
         </div>
 
         <div class="form-group">
           <label for="provincia">Provincia *</label>
-          <input type="text" id="provincia" name="provincia" required placeholder="Ej: Buenos Aires">
+          <input type="text" id="provincia" name="provincia" value="<%= empresa.provincia || '' %>" required placeholder="Ej: Buenos Aires">
         </div>
 
         <div class="form-group">
           <label for="codigo_postal">Código Postal</label>
-          <input type="text" id="codigo_postal" name="codigo_postal" placeholder="Ej: 1636">
+          <input type="text" id="codigo_postal" name="codigo_postal" value="<%= empresa.codigo_postal || '' %>" placeholder="Ej: 1636">
         </div>
       </div>
 
@@ -79,22 +79,26 @@
 
       <div class="form-group">
         <label for="sitio_web">Sitio Web</label>
-        <input type="url" id="sitio_web" name="sitio_web" placeholder="https://www.empresa.com">
+        <input type="url" id="sitio_web" name="sitio_web" value="<%= empresa.sitio_web || '' %>" placeholder="https://www.empresa.com">
       </div>
 
       <% if (user.rol === 'skn_admin') { %>
         <h3>💳 Estado del Servicio</h3>
         <div class="form-group">
           <label class="checkbox-label">
-            <input type="checkbox" name="abonada" value="true" checked>
+            <input type="checkbox" name="abonada" value="true" <%= empresa.abonada ? 'checked' : '' %>>
             <span>La empresa está abonada al servicio</span>
           </label>
           <small>⚠️ Solo los administradores completos de SKN pueden modificar este campo</small>
         </div>
+      <% } else { %>
+        <div class="alert alert-info" style="margin-top: 20px;">
+          ℹ️ El estado de "abonada" solo puede ser modificado por administradores completos de SKN
+        </div>
       <% } %>
 
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary">💾 Crear Empresa</button>
+        <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
         <a href="/empresas" class="btn btn-secondary">Cancelar</a>
       </div>
     </form>

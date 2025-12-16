@@ -47,6 +47,8 @@ const servidoresRoutes = require('./routes/servidoresRoutes');
 const contadoresRoutes = require('./routes/contadoresRoutes');
 const empresasRoutes = require('./routes/empresasRoutes');
 const evaluacionesRoutes = require('./routes/evaluacionesRoutes');
+const situacionesRoutes = require('./routes/situacionesRoutes');
+const checklistRoutes = require('./routes/checklistRoutes');
 
 // Usar rutas
 app.use('/auth', authRoutes);
@@ -59,6 +61,8 @@ app.use('/servidores', servidoresRoutes);
 app.use('/contadores', contadoresRoutes);
 app.use('/empresas', empresasRoutes);
 app.use('/evaluaciones', evaluacionesRoutes); // SOLO admin SKN
+app.use('/situaciones', situacionesRoutes); // SOLO admin SKN
+app.use('/checklist', checklistRoutes); // Para técnicos asignados
 
 // Ruta principal
 app.get('/', (req, res) => {

@@ -164,22 +164,51 @@
           <h3>⚙️ Acciones (Solo SKN)</h3>
         </div>
         <div class="detail-content">
+          <!-- Link al Checklist de Materiales -->
+          <% if (ticket.situacion_soporte_id && ticket.tipo_soporte === 'fisico') { %>
+            <div class="time-control-card" style="margin-bottom: var(--spacing-lg); background: <%= ticket.estado === 'abierto' ? '#fff3cd' : '#f0f8ff' %>; border-left: 4px solid <%= ticket.estado === 'abierto' ? '#ff9800' : '#2196f3' %>;">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+                <div style="flex: 1;">
+                  <h4 style="margin: 0 0 8px 0;">📦 Checklist de Materiales</h4>
+                  <% if (ticket.estado === 'abierto') { %>
+                    <p style="margin: 0; font-size: 14px; color: #f57c00; font-weight: 600;">
+                      ⚠️ Completa el checklist antes de poder cambiar a "En Proceso"
+                    </p>
+                  <% } else { %>
+                    <p style="margin: 0; font-size: 14px; color: #666;">
+                      Ver o modificar los materiales que llevarás al soporte
+                    </p>
+                  <% } %>
+                </div>
+                <a href="/checklist/<%= ticket.id %>" class="btn <%= ticket.estado === 'abierto' ? 'btn-warning' : 'btn-primary' %>" style="white-space: nowrap;">
+                  <%= ticket.estado === 'abierto' ? '⚠️ Completar Checklist' : '📋 Ver Checklist' %>
+                </a>
+              </div>
+            </div>
+          <% } %>
+
           <% if (ticket.tipo_soporte === 'fisico') { %>
             <div class="time-control-card" style="margin-bottom: var(--spacing-lg);">
               <h4>⏱️ Registro de Tiempo</h4>
-              <div class="form-row">
-                <% if (!ticket.hora_inicio) { %>
-                  <form action="/tickets/<%= ticket.id %>/hora-inicio" method="POST" style="display: inline;">
-                    <button type="submit" class="btn btn-primary">🟢 Registrar Hora de Inicio</button>
-                  </form>
-                <% } else if (!ticket.hora_fin) { %>
-                  <form action="/tickets/<%= ticket.id %>/hora-fin" method="POST" style="display: inline;">
-                    <button type="submit" class="btn btn-danger">🔴 Registrar Hora de Fin</button>
-                  </form>
-                <% } else { %>
-                  <div class="alert alert-success">✅ Tiempo registrado completamente</div>
-                <% } %>
-              </div>
+              <% if (ticket.estado === 'abierto') { %>
+                <div class="alert alert-info">
+                  ℹ️ El registro de tiempo estará disponible cuando el ticket esté en estado "En Proceso"
+                </div>
+              <% } else { %>
+                <div class="form-row">
+                  <% if (!ticket.hora_inicio) { %>
+                    <form action="/tickets/<%= ticket.id %>/hora-inicio" method="POST" style="display: inline;">
+                      <button type="submit" class="btn btn-primary">🟢 Registrar Hora de Inicio</button>
+                    </form>
+                  <% } else if (!ticket.hora_fin) { %>
+                    <form action="/tickets/<%= ticket.id %>/hora-fin" method="POST" style="display: inline;">
+                      <button type="submit" class="btn btn-danger">🔴 Registrar Hora de Fin</button>
+                    </form>
+                  <% } else { %>
+                    <div class="alert alert-success">✅ Tiempo registrado completamente</div>
+                  <% } %>
+                </div>
+              <% } %>
             </div>
           <% } %>
 
@@ -191,8 +220,15 @@
             <form action="/tickets/<%= ticket.id %>/asignar" method="POST" style="display: inline;">
               <select name="usuario_asignado" required>
                 <option value="">Asignar a otro usuario...</option>
-                <% usuariosSKN.forEach(u => { %>
-                  <option value="<%= u.id %>" <%= ticket.usuario_asignado == u.id ? 'selected' : '' %>><%= u.nombre_completo %></option>
+                <% usuariosSKN.forEach(u => { 
+                  let rolLabel = '';
+                  if (u.rol === 'skn_admin') rolLabel = '👑 Admin';
+                  else if (u.rol === 'skn_subadmin') rolLabel = '⭐ SubAdmin';
+                  else if (u.rol === 'skn_user') rolLabel = '👤 Técnico';
+                %>
+                  <option value="<%= u.id %>" <%= ticket.usuario_asignado == u.id ? 'selected' : '' %>>
+                    <%= u.nombre_completo %> (<%= rolLabel %>)
+                  </option>
                 <% }) %>
               </select>
               <button type="submit" class="btn btn-warning">👥 Asignar</button>
@@ -200,6 +236,12 @@
           </div>
 
           <div class="form-row" style="margin-top: var(--spacing-md);">
+            <% if (ticket.tipo_soporte === 'fisico' && (ticket.estado === 'en_proceso' || ticket.estado === 'abierto') && imagenes.length === 0) { %>
+              <div class="alert alert-warning" style="margin-bottom: var(--spacing-md);">
+                ⚠️ <strong>Recordatorio:</strong> Para cerrar este ticket presencial necesitas subir al menos una imagen del trabajo realizado.
+              </div>
+            <% } %>
+            
             <form action="/tickets/<%= ticket.id %>/estado" method="POST" style="width: 100%;">
               <div class="form-group">
                 <label>Cambiar Estado:</label>

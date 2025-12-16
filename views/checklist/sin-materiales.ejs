@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checklist - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>📋 Checklist de Materiales</h1>
+      <div class="actions">
+        <a href="/tickets/<%= ticket.id %>" class="btn btn-secondary">⬅️ Volver al Ticket</a>
+      </div>
+    </div>
+
+    <!-- Información del Ticket -->
+    <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px;">
+      <h2 style="margin: 0 0 16px 0; color: var(--primary-color);">
+        🎫 Ticket #<%= ticket.id %>: <%= ticket.titulo %>
+      </h2>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+        <div>
+          <strong style="color: #666;">Empresa:</strong>
+          <p style="margin: 4px 0 0 0;"><%= ticket.empresa_nombre %></p>
+        </div>
+        <div>
+          <strong style="color: #666;">Estado:</strong>
+          <p style="margin: 4px 0 0 0;">
+            <span class="badge badge-<%= ticket.estado === 'abierto' ? 'warning' : ticket.estado === 'en_proceso' ? 'info' : 'success' %>">
+              <%= ticket.estado %>
+            </span>
+          </p>
+        </div>
+        <div>
+          <strong style="color: #666;">Tipo de Soporte:</strong>
+          <p style="margin: 4px 0 0 0;"><%= ticket.tipo_soporte || 'No especificado' %></p>
+        </div>
+        <div>
+          <strong style="color: #666;">Asignado a:</strong>
+          <p style="margin: 4px 0 0 0;"><%= ticket.asignado_nombre || 'Sin asignar' %></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado sin materiales -->
+    <div class="empty-state" style="background: white; border-radius: 12px; padding: 48px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;">
+      <div style="font-size: 72px; margin-bottom: 16px;">📭</div>
+      <h2 style="color: var(--primary-color); margin-bottom: 12px;">
+        Sin Checklist de Materiales
+      </h2>
+      <p style="color: #666; max-width: 600px; margin: 0 auto 24px;">
+        <% if (!ticket.situacion_soporte_id) { %>
+          Este ticket no tiene una situación de soporte asignada, por lo que no requiere un checklist de materiales.
+        <% } else if (ticket.tipo_soporte === 'remoto') { %>
+          Este es un soporte remoto que no requiere materiales físicos.
+        <% } else { %>
+          La situación asignada a este ticket no requiere materiales específicos.
+        <% } %>
+      </p>
+      
+      <div style="background: #f8f9fa; border-radius: 8px; padding: 16px; margin: 0 auto 24px; max-width: 600px;">
+        <p style="margin: 0; font-size: 14px; color: #666;">
+          <strong>💡 Nota:</strong> Si este ticket requiere materiales, puedes:
+        </p>
+        <ul style="text-align: left; margin: 12px 0 0 0; padding-left: 24px; font-size: 14px; color: #666;">
+          <% if (!ticket.situacion_soporte_id) { %>
+            <li>Editar el ticket y asignarle una situación de soporte apropiada</li>
+          <% } else { %>
+            <li>Editar la situación en el módulo de administración</li>
+            <li>Agregar materiales a la situación actual</li>
+          <% } %>
+          <li>Consultar con un administrador SKN para configurar los materiales necesarios</li>
+        </ul>
+      </div>
+      
+      <div>
+        <a href="/tickets/<%= ticket.id %>" class="btn btn-primary">Volver al Ticket</a>
+        <% if (user && (user.rol === 'skn_admin' || user.rol === 'skn_subadmin')) { %>
+          <a href="/situaciones" class="btn btn-secondary" style="margin-left: 8px;">⚙️ Gestionar Situaciones</a>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

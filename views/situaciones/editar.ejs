@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>✏️ Editar Situación de Soporte</h1>
+      <a href="/situaciones/<%= situacion.id %>" class="btn btn-secondary">⬅️ Volver</a>
+    </div>
+
+    <div class="alert alert-warning">
+      ⚠️ Solo administradores completos de SKN pueden editar situaciones
+    </div>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <form action="/situaciones/<%= situacion.id %>/editar" method="POST">
+      <h3>📋 Información Básica</h3>
+      
+      <div class="form-row">
+        <div class="form-group" style="flex: 2;">
+          <label for="nombre">Nombre de la Situación *</label>
+          <input type="text" id="nombre" name="nombre" value="<%= situacion.nombre %>" required placeholder="Ej: Instalación de Equipo Nuevo">
+        </div>
+
+        <div class="form-group">
+          <label for="tipo_soporte">Tipo de Soporte *</label>
+          <select id="tipo_soporte" name="tipo_soporte" required onchange="updateMaterialesOption()">
+            <option value="presencial" <%= situacion.tipo_soporte === 'presencial' ? 'selected' : '' %>>🚗 Presencial</option>
+            <option value="remoto" <%= situacion.tipo_soporte === 'remoto' ? 'selected' : '' %>>💻 Remoto</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="descripcion">Descripción</label>
+        <textarea id="descripcion" name="descripcion" rows="3" placeholder="Describe los detalles de esta situación..."><%= situacion.descripcion || '' %></textarea>
+      </div>
+
+      <h3>⚙️ Configuración</h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="color">Color Identificador</label>
+          <input type="color" id="color" name="color" value="<%= situacion.color || '#3498db' %>">
+          <small>Color para identificar esta situación en el sistema</small>
+        </div>
+
+        <div class="form-group">
+          <label for="orden">Orden de Visualización</label>
+          <input type="number" id="orden" name="orden" value="<%= situacion.orden || 0 %>" min="0">
+          <small>Número para ordenar la lista (0 = primero)</small>
+        </div>
+      </div>
+
+      <div class="form-group" id="materiales-option" style="<%= situacion.tipo_soporte === 'presencial' ? '' : 'display: none;' %>">
+        <label class="checkbox-label">
+          <input type="checkbox" name="requiere_materiales" id="requiere_materiales" <%= situacion.requiere_materiales ? 'checked' : '' %>>
+          <span>Esta situación requiere checklist de materiales</span>
+        </label>
+        <small>💡 Puedes gestionar los materiales desde la vista de detalle</small>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" name="activo" <%= situacion.activo ? 'checked' : '' %>>
+          <span>✅ Situación activa</span>
+        </label>
+        <small>Las situaciones inactivas no aparecerán en los formularios de tickets</small>
+      </div>
+
+      <div class="alert alert-info" style="margin-top: 20px;">
+        ℹ️ <strong>Nota:</strong> Solo las situaciones presenciales pueden tener checklist de materiales.
+        Las situaciones remotas no requieren materiales físicos.
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+        <a href="/situaciones/<%= situacion.id %>" class="btn btn-secondary">Cancelar</a>
+        <form action="/situaciones/<%= situacion.id %>/eliminar" method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de desactivar esta situación?')">
+          <button type="submit" class="btn btn-danger">🗑️ Desactivar</button>
+        </form>
+      </div>
+    </form>
+
+    <script>
+      function updateMaterialesOption() {
+        const tipoSoporte = document.getElementById('tipo_soporte').value;
+        const materialesOption = document.getElementById('materiales-option');
+        const requiereMateriales = document.getElementById('requiere_materiales');
+        
+        if (tipoSoporte === 'presencial') {
+          materialesOption.style.display = 'block';
+        } else {
+          materialesOption.style.display = 'none';
+          requiereMateriales.checked = false;
+        }
+      }
+    </script>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

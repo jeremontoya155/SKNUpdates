@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .checklist-item {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-left: 4px solid #3498db;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+    .checklist-item.obligatorio {
+      border-left-color: #e74c3c;
+      background: #fff5f5;
+    }
+    .checklist-item.completado {
+      border-left-color: #27ae60;
+      background: #f0fff4;
+    }
+    .checklist-item:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .checkbox-label input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+    }
+    .material-details {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #eee;
+      display: none;
+    }
+    .checklist-item.completado .material-details,
+    .checklist-item input[type="checkbox"]:checked ~ .material-details {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>📋 Checklist de Materiales</h1>
+      <div class="actions">
+        <a href="/tickets/<%= ticket.id %>" class="btn btn-secondary">⬅️ Volver al Ticket</a>
+      </div>
+    </div>
+
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <!-- Información del Ticket -->
+    <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px;">
+      <h2 style="margin: 0 0 16px 0; color: var(--primary-color);">
+        🎫 Ticket #<%= ticket.id %>: <%= ticket.titulo %>
+      </h2>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+        <div>
+          <strong style="color: #666;">Empresa:</strong>
+          <p style="margin: 4px 0 0 0;"><%= ticket.empresa_nombre %></p>
+        </div>
+        <div>
+          <strong style="color: #666;">Situación:</strong>
+          <p style="margin: 4px 0 0 0;"><%= ticket.situacion_nombre %></p>
+        </div>
+        <div>
+          <strong style="color: #666;">Estado:</strong>
+          <p style="margin: 4px 0 0 0;">
+            <span class="badge badge-<%= ticket.estado === 'abierto' ? 'warning' : ticket.estado === 'en_proceso' ? 'info' : 'success' %>">
+              <%= ticket.estado %>
+            </span>
+          </p>
+        </div>
+        <div>
+          <strong style="color: #666;">Asignado a:</strong>
+          <p style="margin: 4px 0 0 0;"><%= ticket.asignado_nombre || 'Sin asignar' %></p>
+        </div>
+      </div>
+
+      <% if (ticket.situacion_descripcion) { %>
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee;">
+          <strong style="color: #666;">Descripción de la situación:</strong>
+          <p style="margin: 4px 0 0 0; font-size: 14px; color: #555;">
+            <%= ticket.situacion_descripcion %>
+          </p>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Checklist -->
+    <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h3 style="margin: 0;">
+          📦 Materiales a Llevar
+          <span style="background: var(--primary-color); color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; margin-left: 8px;">
+            <%= materiales.length %>
+          </span>
+        </h3>
+        <div>
+          <span id="completados-count" style="font-size: 14px; color: #27ae60; font-weight: 600;">
+            0 completados
+          </span>
+        </div>
+      </div>
+
+      <% if (ticket.estado === 'abierto') { %>
+        <div class="alert alert-warning" style="margin-bottom: 20px; border-left: 4px solid #ff9800; background: #fff3cd;">
+          ⚠️ <strong>IMPORTANTE:</strong> Este ticket está en estado <strong>ABIERTO</strong>. Debes completar este checklist con todos los materiales obligatorios antes de poder cambiar el ticket a <strong>EN PROCESO</strong>.
+        </div>
+      <% } %>
+      
+      <div class="alert alert-info" style="margin-bottom: 20px;">
+        ℹ️ <strong>Instrucciones:</strong> Marca los materiales que llevarás al soporte presencial. 
+        Los materiales marcados como <span class="badge badge-danger" style="font-size: 11px;">OBLIGATORIOS</span> son indispensables para poder iniciar el ticket.
+      </div>
+
+      <form action="/checklist/<%= ticket.id %>" method="POST" id="checklist-form">
+        <% materiales.forEach((mat, index) => { %>
+          <div class="checklist-item <%= mat.obligatorio ? 'obligatorio' : '' %> <%= mat.llevado ? 'completado' : '' %>" data-index="<%= index %>">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                name="llevado" 
+                value="<%= mat.id %>" 
+                <%= mat.llevado ? 'checked' : '' %>
+                onchange="toggleMaterial(this, <%= index %>)"
+              >
+              <input type="hidden" name="material_id" value="<%= mat.id %>">
+              
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span><%= mat.nombre %></span>
+                  <% if (mat.obligatorio) { %>
+                    <span class="badge badge-danger" style="font-size: 11px;">⚠️ OBLIGATORIO</span>
+                  <% } %>
+                  <span style="background: #e9ecef; padding: 2px 8px; border-radius: 12px; font-size: 12px; color: #666;">
+                    Sugerido: x<%= mat.cantidad_sugerida %>
+                  </span>
+                </div>
+                <% if (mat.descripcion) { %>
+                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #666; font-weight: normal;">
+                    <%= mat.descripcion %>
+                  </p>
+                <% } %>
+              </div>
+            </label>
+
+            <div class="material-details">
+              <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 8px;">
+                <div class="form-group" style="margin: 0;">
+                  <label style="font-size: 13px; color: #666;">Cantidad a Llevar</label>
+                  <input 
+                    type="number" 
+                    name="cantidad" 
+                    value="<%= mat.cantidad_llevada || mat.cantidad_sugerida %>" 
+                    min="0"
+                    style="width: 100%;"
+                  >
+                </div>
+                <div class="form-group" style="margin: 0;">
+                  <label style="font-size: 13px; color: #666;">Notas</label>
+                  <input 
+                    type="text" 
+                    name="notas" 
+                    value="<%= mat.notas || '' %>" 
+                    placeholder="Notas adicionales..."
+                    style="width: 100%;"
+                  >
+                </div>
+              </div>
+              <% if (mat.fecha_registro) { %>
+                <p style="margin: 8px 0 0 0; font-size: 12px; color: #999;">
+                  Última actualización: <%= new Date(mat.fecha_registro).toLocaleString('es-ES') %>
+                </p>
+              <% } %>
+            </div>
+          </div>
+        <% }) %>
+
+        <% if (materiales.length === 0) { %>
+          <div class="empty-state">
+            <p>📭 No hay materiales definidos para esta situación</p>
+          </div>
+        <% } else { %>
+          <div class="form-actions" style="margin-top: 24px;">
+            <button type="submit" class="btn btn-primary">💾 Guardar Checklist</button>
+            <a href="/tickets/<%= ticket.id %>" class="btn btn-secondary">Cancelar</a>
+          </div>
+        <% } %>
+      </form>
+    </div>
+
+    <script>
+      function toggleMaterial(checkbox, index) {
+        const item = checkbox.closest('.checklist-item');
+        if (checkbox.checked) {
+          item.classList.add('completado');
+        } else {
+          item.classList.remove('completado');
+        }
+        updateCount();
+      }
+
+      function updateCount() {
+        const checkboxes = document.querySelectorAll('.checklist-item input[type="checkbox"]');
+        const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+        document.getElementById('completados-count').textContent = `${checked} completados`;
+      }
+
+      // Inicializar contador
+      document.addEventListener('DOMContentLoaded', function() {
+        updateCount();
+      });
+    </script>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

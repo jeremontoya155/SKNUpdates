@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .material-item {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--primary-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+    .material-item:hover {
+      background: #e9ecef;
+      transform: translateX(5px);
+    }
+    .material-item.obligatorio {
+      border-left-color: #e74c3c;
+    }
+    .material-info {
+      flex: 1;
+    }
+    .material-actions {
+      display: flex;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1 style="display: flex; align-items: center; gap: 10px;">
+        <span style="color: <%= situacion.color %>;">●</span>
+        <%= situacion.nombre %>
+      </h1>
+      <div class="actions">
+        <a href="/situaciones/<%= situacion.id %>/editar" class="btn btn-primary">✏️ Editar</a>
+        <a href="/situaciones" class="btn btn-secondary">⬅️ Volver</a>
+      </div>
+    </div>
+
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <!-- Información de la situación -->
+    <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+        <div>
+          <h4 style="margin: 0 0 8px 0; color: #666; font-size: 14px;">Tipo de Soporte</h4>
+          <p style="margin: 0; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <%= situacion.tipo_soporte === 'presencial' ? '🚗' : '💻' %>
+            <%= situacion.tipo_soporte === 'presencial' ? 'Presencial' : 'Remoto' %>
+          </p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 8px 0; color: #666; font-size: 14px;">Estado</h4>
+          <p style="margin: 0; font-size: 18px; font-weight: 600;">
+            <span class="badge <%= situacion.activo ? 'badge-success' : 'badge-secondary' %>">
+              <%= situacion.activo ? '✅ Activa' : '⏸️ Inactiva' %>
+            </span>
+          </p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 8px 0; color: #666; font-size: 14px;">Requiere Materiales</h4>
+          <p style="margin: 0; font-size: 18px; font-weight: 600;">
+            <%= situacion.requiere_materiales ? '✅ Sí' : '➖ No' %>
+          </p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 8px 0; color: #666; font-size: 14px;">Creado por</h4>
+          <p style="margin: 0; font-size: 16px;">
+            <%= situacion.creador_nombre || 'Sistema' %>
+          </p>
+        </div>
+      </div>
+
+      <% if (situacion.descripcion) { %>
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+          <h4 style="margin: 0 0 8px 0; color: #666; font-size: 14px;">Descripción</h4>
+          <p style="margin: 0; font-size: 15px; line-height: 1.6;">
+            <%= situacion.descripcion %>
+          </p>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Checklist de Materiales (solo para presenciales) -->
+    <% if (situacion.tipo_soporte === 'presencial') { %>
+      <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+            📦 Checklist de Materiales
+            <span style="background: var(--primary-color); color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px;">
+              <%= materiales.length %>
+            </span>
+          </h3>
+          <button class="btn btn-primary" onclick="showAddMaterial()">➕ Agregar Material</button>
+        </div>
+
+        <!-- Formulario para agregar material (oculto por defecto) -->
+        <div id="add-material-form" style="display: none; background: #f0f4f8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 15px 0;">Nuevo Material</h4>
+          <form action="/situaciones/<%= situacion.id %>/materiales" method="POST">
+            <div class="form-row">
+              <div class="form-group" style="flex: 2;">
+                <label for="nombre">Nombre del Material *</label>
+                <input type="text" id="nombre" name="nombre" required placeholder="Ej: Notebook de Trabajo">
+              </div>
+
+              <div class="form-group">
+                <label for="cantidad_sugerida">Cantidad</label>
+                <input type="number" id="cantidad_sugerida" name="cantidad_sugerida" value="1" min="1">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="descripcion">Descripción</label>
+              <input type="text" id="descripcion" name="descripcion" placeholder="Detalles adicionales...">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" name="obligatorio">
+                  <span>⚠️ Material obligatorio</span>
+                </label>
+              </div>
+
+              <div class="form-group">
+                <label for="orden">Orden</label>
+                <input type="number" id="orden" name="orden" value="0" min="0">
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+              <button type="submit" class="btn btn-success">💾 Guardar Material</button>
+              <button type="button" class="btn btn-secondary" onclick="hideAddMaterial()">Cancelar</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Lista de materiales -->
+        <% if (materiales.length > 0) { %>
+          <div style="margin-top: 20px;">
+            <% materiales.forEach(mat => { %>
+              <div class="material-item <%= mat.obligatorio ? 'obligatorio' : '' %>">
+                <div class="material-info">
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                    <strong style="font-size: 16px;"><%= mat.nombre %></strong>
+                    <% if (mat.obligatorio) { %>
+                      <span class="badge badge-danger" style="font-size: 11px;">⚠️ OBLIGATORIO</span>
+                    <% } %>
+                    <span style="background: #e9ecef; padding: 2px 8px; border-radius: 12px; font-size: 12px; color: #666;">
+                      x<%= mat.cantidad_sugerida %>
+                    </span>
+                  </div>
+                  <% if (mat.descripcion) { %>
+                    <p style="margin: 0; font-size: 13px; color: #666;">
+                      <%= mat.descripcion %>
+                    </p>
+                  <% } %>
+                </div>
+                <div class="material-actions">
+                  <button class="btn-small btn-primary" onclick="editMaterial(<%= mat.id %>, '<%= mat.nombre %>', '<%= mat.descripcion || '' %>', <%= mat.obligatorio %>, <%= mat.cantidad_sugerida %>, <%= mat.orden %>)">
+                    ✏️
+                  </button>
+                  <form action="/situaciones/<%= situacion.id %>/materiales/<%= mat.id %>/eliminar" method="POST" style="margin: 0;" onsubmit="return confirm('¿Eliminar este material?')">
+                    <button type="submit" class="btn-small btn-danger">🗑️</button>
+                  </form>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state" style="padding: 40px;">
+            <p>📭 No hay materiales en el checklist</p>
+            <button class="btn btn-primary" onclick="showAddMaterial()">Agregar primer material</button>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+
+    <!-- Tickets recientes con esta situación -->
+    <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
+        🎫 Tickets Recientes
+        <span style="background: #95a5a6; color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px;">
+          <%= tickets.length %>
+        </span>
+      </h3>
+
+      <% if (tickets.length > 0) { %>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Empresa</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% tickets.forEach(ticket => { %>
+                <tr>
+                  <td>#<%= ticket.id %></td>
+                  <td><%= ticket.titulo %></td>
+                  <td><%= ticket.empresa_nombre %></td>
+                  <td>
+                    <span class="badge badge-<%= ticket.estado === 'abierto' ? 'warning' : ticket.estado === 'en_proceso' ? 'info' : 'success' %>">
+                      <%= ticket.estado %>
+                    </span>
+                  </td>
+                  <td>
+                    <a href="/tickets/<%= ticket.id %>" class="btn-small">Ver</a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <div class="empty-state">
+          <p>📭 No hay tickets con esta situación aún</p>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Modal de edición (se rellena con JavaScript) -->
+    <div id="edit-material-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+      <div style="background: white; border-radius: 12px; padding: 30px; max-width: 600px; width: 90%;">
+        <h3 style="margin: 0 0 20px 0;">✏️ Editar Material</h3>
+        <form id="edit-form" method="POST">
+          <div class="form-group">
+            <label>Nombre del Material *</label>
+            <input type="text" id="edit-nombre" name="nombre" required>
+          </div>
+
+          <div class="form-group">
+            <label>Descripción</label>
+            <input type="text" id="edit-descripcion" name="descripcion">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Cantidad Sugerida</label>
+              <input type="number" id="edit-cantidad" name="cantidad_sugerida" min="1">
+            </div>
+
+            <div class="form-group">
+              <label>Orden</label>
+              <input type="number" id="edit-orden" name="orden" min="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="edit-obligatorio" name="obligatorio">
+              <span>⚠️ Material obligatorio</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="edit-activo" name="activo" checked>
+              <span>✅ Material activo</span>
+            </label>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+            <button type="button" class="btn btn-secondary" onclick="hideEditMaterial()">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      function showAddMaterial() {
+        document.getElementById('add-material-form').style.display = 'block';
+      }
+
+      function hideAddMaterial() {
+        document.getElementById('add-material-form').style.display = 'none';
+      }
+
+      function editMaterial(id, nombre, descripcion, obligatorio, cantidad, orden) {
+        document.getElementById('edit-nombre').value = nombre;
+        document.getElementById('edit-descripcion').value = descripcion;
+        document.getElementById('edit-obligatorio').checked = obligatorio;
+        document.getElementById('edit-cantidad').value = cantidad;
+        document.getElementById('edit-orden').value = orden;
+        
+        document.getElementById('edit-form').action = '/situaciones/<%= situacion.id %>/materiales/' + id + '/editar';
+        document.getElementById('edit-material-modal').style.display = 'flex';
+      }
+
+      function hideEditMaterial() {
+        document.getElementById('edit-material-modal').style.display = 'none';
+      }
+
+      // Cerrar modal al hacer clic fuera
+      document.getElementById('edit-material-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          hideEditMaterial();
+        }
+      });
+    </script>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

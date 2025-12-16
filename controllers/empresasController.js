@@ -4,7 +4,7 @@ const pool = require('../database');
 exports.index = async (req, res) => {
   try {
     const { rol } = req.session.user;
-    const esSKN = rol === 'skn_admin' || rol === 'skn_user';
+    const esSKN = ['skn_admin', 'skn_subadmin', 'skn_user'].includes(rol);
 
     if (!esSKN) {
       return res.status(403).send('Solo usuarios SKN pueden gestionar empresas');
@@ -27,8 +27,13 @@ exports.index = async (req, res) => {
     res.render('empresas/index', {
       title: 'Gestión de Empresas',
       user: req.session.user,
-      empresas: result.rows
+      empresas: result.rows,
+      message: req.session.message,
+      error: req.session.error
     });
+    
+    delete req.session.message;
+    delete req.session.error;
   } catch (error) {
     console.error('Error al listar empresas:', error);
     res.status(500).send('Error al cargar empresas');
@@ -38,7 +43,7 @@ exports.index = async (req, res) => {
 // Mostrar formulario de nueva empresa (SOLO SKN)
 exports.showNueva = (req, res) => {
   const { rol } = req.session.user;
-  const esSKN = rol === 'skn_admin' || rol === 'skn_user';
+  const esSKN = ['skn_admin', 'skn_subadmin', 'skn_user'].includes(rol);
 
   if (!esSKN) {
     return res.status(403).send('Solo usuarios SKN pueden crear empresas');
@@ -55,13 +60,13 @@ exports.showNueva = (req, res) => {
 exports.crear = async (req, res) => {
   try {
     const { rol } = req.session.user;
-    const esSKN = rol === 'skn_admin' || rol === 'skn_user';
+    const esSKN = ['skn_admin', 'skn_subadmin', 'skn_user'].includes(rol);
 
     if (!esSKN) {
       return res.status(403).send('Solo usuarios SKN pueden crear empresas');
     }
 
-    const { nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web } = req.body;
+    const { nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web, abonada } = req.body;
 
     // Verificar que no exista
     const existe = await pool.query(
@@ -77,10 +82,14 @@ exports.crear = async (req, res) => {
       });
     }
 
+    // Solo skn_admin puede establecer el estado de "abonada"
+    // Para otros roles, siempre será true por defecto
+    const esAbonada = rol === 'skn_admin' ? (abonada === 'true' || abonada === true) : true;
+
     await pool.query(
-      `INSERT INTO empresas (nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web, activo) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)`,
-      [nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web]
+      `INSERT INTO empresas (nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web, activo, abonada) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, $10)`,
+      [nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web, esAbonada]
     );
 
     req.session.message = 'Empresa creada exitosamente';
@@ -207,12 +216,90 @@ exports.detalle = async (req, res) => {
   }
 };
 
+// Mostrar formulario de edición (SOLO SKN)
+exports.showEditar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rol } = req.session.user;
+    const esSKN = ['skn_admin', 'skn_subadmin', 'skn_user'].includes(rol);
+
+    if (!esSKN) {
+      return res.status(403).send('Solo usuarios SKN pueden editar empresas');
+    }
+
+    const result = await pool.query('SELECT * FROM empresas WHERE id = $1', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).send('Empresa no encontrada');
+    }
+
+    res.render('empresas/editar', {
+      title: 'Editar Empresa',
+      user: req.session.user,
+      empresa: result.rows[0],
+      error: null
+    });
+  } catch (error) {
+    console.error('Error al mostrar formulario de edición:', error);
+    res.status(500).send('Error al cargar formulario');
+  }
+};
+
+// Actualizar empresa (SOLO SKN)
+exports.actualizar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rol } = req.session.user;
+    const esSKN = ['skn_admin', 'skn_subadmin', 'skn_user'].includes(rol);
+
+    if (!esSKN) {
+      return res.status(403).send('Solo usuarios SKN pueden actualizar empresas');
+    }
+
+    const { nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web, abonada } = req.body;
+
+    // Solo skn_admin puede modificar el estado de "abonada"
+    let query;
+    let params;
+
+    if (rol === 'skn_admin') {
+      const esAbonada = abonada === 'true' || abonada === true;
+      query = `UPDATE empresas 
+               SET nombre = $1, cuit = $2, direccion = $3, ciudad = $4, provincia = $5, 
+                   codigo_postal = $6, telefono = $7, email = $8, sitio_web = $9, abonada = $10
+               WHERE id = $11`;
+      params = [nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web, esAbonada, id];
+    } else {
+      // skn_subadmin y skn_user no pueden modificar "abonada"
+      query = `UPDATE empresas 
+               SET nombre = $1, cuit = $2, direccion = $3, ciudad = $4, provincia = $5, 
+                   codigo_postal = $6, telefono = $7, email = $8, sitio_web = $9
+               WHERE id = $10`;
+      params = [nombre, cuit, direccion, ciudad, provincia, codigo_postal, telefono, email, sitio_web, id];
+    }
+
+    await pool.query(query, params);
+
+    req.session.message = 'Empresa actualizada exitosamente';
+    res.redirect('/empresas');
+  } catch (error) {
+    console.error('Error al actualizar empresa:', error);
+    const empresa = await pool.query('SELECT * FROM empresas WHERE id = $1', [req.params.id]);
+    res.render('empresas/editar', {
+      title: 'Editar Empresa',
+      user: req.session.user,
+      empresa: empresa.rows[0],
+      error: 'Error al actualizar empresa'
+    });
+  }
+};
+
 // Activar/Desactivar empresa (SOLO SKN)
 exports.toggleActivo = async (req, res) => {
   try {
     const { id } = req.params;
     const { rol } = req.session.user;
-    const esSKN = rol === 'skn_admin' || rol === 'skn_user';
+    const esSKN = ['skn_admin', 'skn_subadmin', 'skn_user'].includes(rol);
 
     if (!esSKN) {
       return res.status(403).send('Solo usuarios SKN pueden activar/desactivar empresas');
@@ -227,6 +314,33 @@ exports.toggleActivo = async (req, res) => {
     res.redirect('/empresas');
   } catch (error) {
     console.error('Error al cambiar estado:', error);
+    res.redirect('/empresas');
+  }
+};
+
+// Cambiar estado de abonada (SOLO skn_admin)
+exports.toggleAbonada = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rol } = req.session.user;
+
+    if (rol !== 'skn_admin') {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Solo el administrador completo de SKN puede cambiar el estado de abonada' 
+      });
+    }
+
+    await pool.query(
+      'UPDATE empresas SET abonada = NOT abonada WHERE id = $1',
+      [id]
+    );
+
+    req.session.message = 'Estado de abonada actualizado';
+    res.redirect('/empresas');
+  } catch (error) {
+    console.error('Error al cambiar estado de abonada:', error);
+    req.session.error = 'Error al actualizar estado';
     res.redirect('/empresas');
   }
 };

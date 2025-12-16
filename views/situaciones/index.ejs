@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>⚙️ Gestión de Situaciones de Soporte</h1>
+      <div class="actions">
+        <a href="/situaciones/nueva" class="btn btn-primary">➕ Nueva Situación</a>
+      </div>
+    </div>
+
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="alert alert-info">
+      ℹ️ Las situaciones definen los casos específicos para soportes presenciales y remotos.
+      Solo presenciales pueden tener checklist de materiales.
+    </div>
+
+    <!-- Filtros -->
+    <div class="search-filters">
+      <form method="GET" action="/situaciones" class="search-form">
+        <div class="form-row">
+          <div class="form-group">
+            <select name="tipo" class="filter-select" onchange="this.form.submit()">
+              <option value="">Todos los tipos</option>
+              <option value="presencial" <%= filtro === 'presencial' ? 'selected' : '' %>>🚗 Presencial</option>
+              <option value="remoto" <%= filtro === 'remoto' ? 'selected' : '' %>>💻 Remoto</option>
+            </select>
+          </div>
+          <a href="/situaciones" class="btn btn-secondary">Limpiar</a>
+        </div>
+      </form>
+    </div>
+
+    <%  
+      const presenciales = situaciones.filter(s => s.tipo_soporte === 'presencial');
+      const remotas = situaciones.filter(s => s.tipo_soporte === 'remoto');
+    %>
+
+    <!-- SITUACIONES PRESENCIALES -->
+    <% if (filtro === 'todas' || filtro === 'presencial') { %>
+      <h2 style="margin-top: 30px; color: var(--primary-color); display: flex; align-items: center; gap: 10px;">
+        🚗 Situaciones Presenciales
+        <span style="font-size: 14px; background: #27ae60; color: white; padding: 4px 12px; border-radius: 20px;">
+          <%= presenciales.length %>
+        </span>
+      </h2>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; margin-top: 20px;">
+        <% presenciales.forEach(sit => { %>
+          <div class="situacion-card" style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 20px; border-left: 4px solid <%= sit.color %>; transition: transform 0.2s;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+              <div style="flex: 1;">
+                <h3 style="margin: 0 0 8px 0; color: <%= sit.color %>; font-size: 1.2rem;">
+                  <%= sit.nombre %>
+                </h3>
+                <% if (sit.descripcion) { %>
+                  <p style="margin: 0; font-size: 14px; color: #666;">
+                    <%= sit.descripcion %>
+                  </p>
+                <% } %>
+              </div>
+              <span class="badge <%= sit.activo ? 'badge-success' : 'badge-secondary' %>" style="font-size: 11px;">
+                <%= sit.activo ? '✅' : '⏸️' %>
+              </span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; padding: 12px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
+              <div style="text-align: center;">
+                <div style="font-size: 20px; font-weight: bold; color: <%= sit.color %>;"><%= sit.total_materiales || 0 %></div>
+                <div style="font-size: 11px; color: #666;">📦 Materiales</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 20px; font-weight: bold; color: <%= sit.color %>;"><%= sit.total_tickets || 0 %></div>
+                <div style="font-size: 11px; color: #666;">🎫 Tickets</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 20px;">
+                  <%= sit.requiere_materiales ? '✅' : '➖' %>
+                </div>
+                <div style="font-size: 11px; color: #666;">Checklist</div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <a href="/situaciones/<%= sit.id %>" class="btn btn-primary" style="flex: 1; text-align: center; font-size: 13px;">
+                👁️ Ver Detalle
+              </a>
+              <a href="/situaciones/<%= sit.id %>/editar" class="btn btn-secondary" style="padding: 8px 12px; font-size: 13px;">
+                ✏️
+              </a>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <!-- SITUACIONES REMOTAS -->
+    <% if (filtro === 'todas' || filtro === 'remoto') { %>
+      <h2 style="margin-top: 40px; color: var(--primary-color); display: flex; align-items: center; gap: 10px;">
+        💻 Situaciones Remotas
+        <span style="font-size: 14px; background: #3498db; color: white; padding: 4px 12px; border-radius: 20px;">
+          <%= remotas.length %>
+        </span>
+      </h2>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; margin-top: 20px;">
+        <% remotas.forEach(sit => { %>
+          <div class="situacion-card" style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 20px; border-left: 4px solid <%= sit.color %>; transition: transform 0.2s;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+              <div style="flex: 1;">
+                <h3 style="margin: 0 0 8px 0; color: <%= sit.color %>; font-size: 1.2rem;">
+                  <%= sit.nombre %>
+                </h3>
+                <% if (sit.descripcion) { %>
+                  <p style="margin: 0; font-size: 14px; color: #666;">
+                    <%= sit.descripcion %>
+                  </p>
+                <% } %>
+              </div>
+              <span class="badge <%= sit.activo ? 'badge-success' : 'badge-secondary' %>" style="font-size: 11px;">
+                <%= sit.activo ? '✅' : '⏸️' %>
+              </span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; padding: 12px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
+              <div style="text-align: center;">
+                <div style="font-size: 20px; font-weight: bold; color: <%= sit.color %>;"><%= sit.total_tickets || 0 %></div>
+                <div style="font-size: 11px; color: #666;">🎫 Tickets</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 20px; color: #666;">💻</div>
+                <div style="font-size: 11px; color: #666;">Remoto</div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <a href="/situaciones/<%= sit.id %>" class="btn btn-primary" style="flex: 1; text-align: center; font-size: 13px;">
+                👁️ Ver Detalle
+              </a>
+              <a href="/situaciones/<%= sit.id %>/editar" class="btn btn-secondary" style="padding: 8px 12px; font-size: 13px;">
+                ✏️
+              </a>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <% if (situaciones.length === 0) { %>
+      <div class="empty-state" style="margin-top: 40px;">
+        <p>📭 No hay situaciones registradas</p>
+        <a href="/situaciones/nueva" class="btn btn-primary">Crear primera situación</a>
+      </div>
+    <% } %>
+
+    <style>
+      .situacion-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+      }
+    </style>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

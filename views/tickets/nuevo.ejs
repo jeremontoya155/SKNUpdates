@@ -45,11 +45,19 @@
 
       <div class="form-group">
         <label for="tipo_soporte">Tipo de Soporte *</label>
-        <select id="tipo_soporte" name="tipo_soporte" required onchange="toggleImagenRequerida()">
+        <select id="tipo_soporte" name="tipo_soporte" required onchange="updateSituaciones()">
           <option value="remoto">💻 Remoto - Soporte a distancia</option>
           <option value="fisico">🏢 Físico - Visita presencial al lugar</option>
         </select>
         <small id="tipo-soporte-info">💡 Selecciona si el problema requiere asistencia presencial o puede resolverse remotamente</small>
+      </div>
+
+      <div class="form-group" id="situacion-container">
+        <label for="situacion_soporte_id">Situación Específica *</label>
+        <select id="situacion_soporte_id" name="situacion_soporte_id">
+          <option value="">Seleccione una situación...</option>
+        </select>
+        <small id="situacion-descripcion"></small>
       </div>
 
       <div class="form-group">
@@ -85,15 +93,10 @@
 
       <div class="form-group">
         <label for="imagen_inicial">
-          📷 Imagen del Problema 
-          <span id="imagen-requerida" style="display: none; color: red;">*</span>
-          <span id="imagen-opcional">(Opcional)</span>
+          📷 Imagen del Problema (Opcional)
         </label>
         <input type="file" id="imagen_inicial" name="imagen_inicial" accept="image/jpeg,image/jpg,image/png,image/webp">
-        <small id="imagen-info">💡 Adjunta una foto del problema para ayudar a resolver el ticket más rápido. Máximo 10MB.</small>
-        <small id="imagen-info-fisico" style="display: none; color: #d32f2f; font-weight: bold;">
-          ⚠️ Para soporte físico es OBLIGATORIO adjuntar una imagen del problema inicial.
-        </small>
+        <small>💡 Puedes adjuntar una foto del problema. Las imágenes serán requeridas para cerrar tickets presenciales. Máximo 10MB.</small>
       </div>
 
       <div class="form-actions">
@@ -106,28 +109,53 @@
   <%- include('../partials/footer') %>
   
   <script>
-    function toggleImagenRequerida() {
+    // Datos de situaciones desde el servidor
+    const situaciones = <%- JSON.stringify(situaciones || []) %>;
+
+    function updateSituaciones() {
       const tipoSoporte = document.getElementById('tipo_soporte').value;
-      const imagenInput = document.getElementById('imagen_inicial');
-      const imagenRequerida = document.getElementById('imagen-requerida');
-      const imagenOpcional = document.getElementById('imagen-opcional');
-      const imagenInfo = document.getElementById('imagen-info');
-      const imagenInfoFisico = document.getElementById('imagen-info-fisico');
+      const situacionSelect = document.getElementById('situacion_soporte_id');
+      const situacionDescripcion = document.getElementById('situacion-descripcion');
       
-      if (tipoSoporte === 'fisico') {
-        imagenInput.required = true;
-        imagenRequerida.style.display = 'inline';
-        imagenOpcional.style.display = 'none';
-        imagenInfo.style.display = 'none';
-        imagenInfoFisico.style.display = 'block';
-      } else {
-        imagenInput.required = false;
-        imagenRequerida.style.display = 'none';
-        imagenOpcional.style.display = 'inline';
-        imagenInfo.style.display = 'block';
-        imagenInfoFisico.style.display = 'none';
-      }
+      // Determinar el tipo correcto ('remoto' o 'presencial' basado en 'fisico')
+      const tipoFiltro = tipoSoporte === 'fisico' ? 'presencial' : 'remoto';
+      
+      // Filtrar situaciones por tipo
+      const situacionesFiltradas = situaciones.filter(s => s.tipo_soporte === tipoFiltro);
+      
+      // Limpiar y llenar el select
+      situacionSelect.innerHTML = '<option value="">Seleccione una situación...</option>';
+      
+      situacionesFiltradas.forEach(sit => {
+        const option = document.createElement('option');
+        option.value = sit.id;
+        option.textContent = sit.nombre;
+        option.dataset.descripcion = sit.descripcion || '';
+        option.dataset.color = sit.color;
+        situacionSelect.appendChild(option);
+      });
+      
+      situacionDescripcion.textContent = '';
     }
+
+    // Mostrar descripción de situación seleccionada
+    document.getElementById('situacion_soporte_id').addEventListener('change', function() {
+      const selectedOption = this.options[this.selectedIndex];
+      const descripcion = selectedOption.dataset.descripcion;
+      const situacionDescripcion = document.getElementById('situacion-descripcion');
+      
+      if (descripcion) {
+        situacionDescripcion.textContent = '💡 ' + descripcion;
+        situacionDescripcion.style.color = selectedOption.dataset.color || '#3498db';
+      } else {
+        situacionDescripcion.textContent = '';
+      }
+    });
+
+    // Inicializar al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+      updateSituaciones();
+    });
     
     // Ejecutar al cargar la página
     document.addEventListener('DOMContentLoaded', toggleImagenRequerida);
