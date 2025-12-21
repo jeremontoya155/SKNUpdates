@@ -206,11 +206,36 @@ const ticketsController = {
         empresaFinal = user.empresa_id;
       }
 
+      // Obtener información de la empresa para determinar si requiere autorización
+      const empresaInfo = await db.query(
+        'SELECT abonada FROM empresas WHERE id = $1',
+        [empresaFinal]
+      );
+      const esAbonada = empresaInfo.rows[0]?.abonada || false;
+
+      // Obtener información de la situación para determinar si requiere materiales
+      let requiereMateriales = false;
+      if (situacion_soporte_id) {
+        const situacionInfo = await db.query(
+          'SELECT requiere_materiales FROM situaciones_soporte WHERE id = $1',
+          [situacion_soporte_id]
+        );
+        requiereMateriales = situacionInfo.rows[0]?.requiere_materiales || false;
+      }
+
+      // Determinar si requiere autorización:
+      // 1. Empresa abonada + Ticket presencial con materiales
+      // 2. Empresa NO abonada + Cualquier ticket presencial
+      const requiereAutorizacion = (
+        (esAbonada && tipo_soporte === 'fisico' && requiereMateriales) ||
+        (!esAbonada && tipo_soporte === 'fisico')
+      );
+
       // Insertar ticket con tipo de soporte, tipo de trabajo y situación
       const ticketResult = await db.query(
-        `INSERT INTO tickets (empresa_id, usuario_solicitante, titulo, descripcion, prioridad, estado, tipo_soporte, tipo_trabajo_id, situacion_soporte_id) 
-         VALUES ($1, $2, $3, $4, $5, 'abierto', $6, $7, $8) RETURNING id`,
-        [empresaFinal, user.id, titulo, descripcion, prioridad || 'media', tipo_soporte || 'remoto', tipo_trabajo_id || null, situacion_soporte_id || null]
+        `INSERT INTO tickets (empresa_id, usuario_solicitante, titulo, descripcion, prioridad, estado, tipo_soporte, tipo_trabajo_id, situacion_soporte_id, requiere_autorizacion) 
+         VALUES ($1, $2, $3, $4, $5, 'abierto', $6, $7, $8, $9) RETURNING id`,
+        [empresaFinal, user.id, titulo, descripcion, prioridad || 'media', tipo_soporte || 'remoto', tipo_trabajo_id || null, situacion_soporte_id || null, requiereAutorizacion]
       );
 
       const ticketId = ticketResult.rows[0].id;
@@ -254,16 +279,19 @@ const ticketsController = {
           SELECT 
             t.*, 
             e.nombre as empresa_nombre,
+            e.abonada as empresa_abonada,
             u.nombre as solicitante_nombre, 
             ua.nombre as asignado_nombre,
             tt.nombre as tipo_trabajo_nombre,
             tt.descripcion as tipo_trabajo_descripcion,
-            tt.color as tipo_trabajo_color
+            tt.color as tipo_trabajo_color,
+            uauth.nombre as autorizado_por_nombre
           FROM tickets t 
           JOIN empresas e ON t.empresa_id = e.id
           LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
           LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
           LEFT JOIN tipos_trabajo tt ON t.tipo_trabajo_id = tt.id
+          LEFT JOIN usuarios uauth ON t.autorizado_por = uauth.id
           WHERE t.id = $1
         `;
         params = [id];
@@ -273,16 +301,19 @@ const ticketsController = {
           SELECT 
             t.*, 
             e.nombre as empresa_nombre,
+            e.abonada as empresa_abonada,
             u.nombre as solicitante_nombre, 
             ua.nombre as asignado_nombre,
             tt.nombre as tipo_trabajo_nombre,
             tt.descripcion as tipo_trabajo_descripcion,
-            tt.color as tipo_trabajo_color
+            tt.color as tipo_trabajo_color,
+            uauth.nombre as autorizado_por_nombre
           FROM tickets t 
           JOIN empresas e ON t.empresa_id = e.id
           LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
           LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
           LEFT JOIN tipos_trabajo tt ON t.tipo_trabajo_id = tt.id
+          LEFT JOIN usuarios uauth ON t.autorizado_por = uauth.id
           WHERE t.id = $1 AND t.usuario_asignado = $2
         `;
         params = [id, user.id];
@@ -425,10 +456,10 @@ const ticketsController = {
         }
       }
 
-      // Si se intenta cerrar, verificar si es presencial y tiene imágenes
+      // Si se intenta cerrar, verificar requisitos
       if (estado === 'cerrado') {
         const ticketInfo = await db.query(
-          `SELECT t.tipo_soporte 
+          `SELECT t.tipo_soporte, t.requiere_autorizacion, t.estado_autorizacion
            FROM tickets t
            WHERE t.id = $1`,
           [id]
@@ -449,6 +480,12 @@ const ticketsController = {
             req.session.error = '⚠️ Para cerrar un ticket presencial debes subir al menos una imagen del trabajo realizado.';
             return res.redirect(`/tickets/${id}`);
           }
+        }
+
+        // Si requiere autorización, verificar que esté aprobado
+        if (ticket.requiere_autorizacion && ticket.estado_autorizacion !== 'aprobado') {
+          req.session.error = '⚠️ Este ticket requiere autorización del SubAdmin antes de cerrarse. Estado actual: ' + (ticket.estado_autorizacion || 'pendiente');
+          return res.redirect(`/tickets/${id}`);
         }
 
         // Actualizar estado a cerrado con fecha
@@ -731,7 +768,61 @@ const ticketsController = {
       req.session.error = 'Error al registrar hora de fin';
       res.redirect(`/tickets/${id}`);
     }
+  },
+
+  // Autorizar cierre de ticket (SOLO SubAdmin)
+  autorizarCierre: async (req, res) => {
+    const { id } = req.params;
+    const { decision } = req.body; // 'aprobado' o 'rechazado'
+    const user = req.session.user;
+
+    try {
+      // Solo subadmin puede autorizar
+      if (user.rol !== 'skn_subadmin') {
+        req.session.error = 'Solo el SubAdmin puede autorizar el cierre de tickets';
+        return res.redirect(`/tickets/${id}`);
+      }
+
+      // Verificar que el ticket requiere autorización
+      const ticket = await db.query(
+        'SELECT requiere_autorizacion, estado FROM tickets WHERE id = $1',
+        [id]
+      );
+
+      if (!ticket.rows[0].requiere_autorizacion) {
+        req.session.error = 'Este ticket no requiere autorización';
+        return res.redirect(`/tickets/${id}`);
+      }
+
+      if (ticket.rows[0].estado === 'cerrado') {
+        req.session.error = 'Este ticket ya está cerrado';
+        return res.redirect(`/tickets/${id}`);
+      }
+
+      // Actualizar autorización
+      await db.query(
+        `UPDATE tickets 
+         SET estado_autorizacion = $1, 
+             autorizado_por = $2, 
+             fecha_autorizacion = TIMEZONE('America/Argentina/Buenos_Aires', NOW())
+         WHERE id = $3`,
+        [decision, user.id, id]
+      );
+
+      if (decision === 'aprobado') {
+        req.session.message = '✅ Ticket autorizado para cierre. El técnico ya puede cerrarlo.';
+      } else {
+        req.session.message = '❌ Cierre rechazado. El técnico deberá hacer ajustes.';
+      }
+
+      res.redirect(`/tickets/${id}`);
+    } catch (error) {
+      console.error('Error al autorizar cierre:', error);
+      req.session.error = 'Error al autorizar cierre';
+      res.redirect(`/tickets/${id}`);
+    }
   }
 };
 
 module.exports = ticketsController;
+

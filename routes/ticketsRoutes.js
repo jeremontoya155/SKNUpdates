@@ -24,4 +24,8 @@ router.post('/:id/asignarme', isSKNUser, ticketsController.asignarme);
 router.post('/:id/hora-inicio', isSKNUser, ticketsController.registrarHoraInicio);
 router.post('/:id/hora-fin', isSKNUser, ticketsController.registrarHoraFin);
 
+// Autorización de cierre (SOLO SubAdmin)
+router.post('/:id/autorizar-cierre', isAuthenticated, ticketsController.autorizarCierre);
+
 module.exports = router;
+

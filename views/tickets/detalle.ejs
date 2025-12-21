@@ -259,6 +259,84 @@
       </div>
     <% } %>
 
+    <!-- Autorización de Cierre -->
+    <% if (ticket.requiere_autorizacion) { %>
+      <div class="detail-card" style="margin-top: var(--spacing-xl); border-left: 4px solid <%= ticket.estado_autorizacion === 'aprobado' ? '#4caf50' : (ticket.estado_autorizacion === 'rechazado' ? '#f44336' : '#ff9800') %>;">
+        <div class="detail-header">
+          <h3>🔐 Autorización de Cierre</h3>
+          <% 
+            let authBadge = '';
+            let authTexto = '';
+            if (ticket.estado_autorizacion === 'pendiente') {
+              authBadge = 'badge-warning';
+              authTexto = '⏳ Pendiente';
+            } else if (ticket.estado_autorizacion === 'aprobado') {
+              authBadge = 'badge-success';
+              authTexto = '✅ Aprobado';
+            } else if (ticket.estado_autorizacion === 'rechazado') {
+              authBadge = 'badge-danger';
+              authTexto = '❌ Rechazado';
+            }
+          %>
+          <span class="badge <%= authBadge %>"><%= authTexto %></span>
+        </div>
+        
+        <div class="detail-content">
+          <div class="alert alert-info">
+            ℹ️ <strong>Este ticket requiere autorización de SubAdmin para cerrarse</strong>
+            <% if (ticket.empresa_abonada) { %>
+              <br><small>Razón: Empresa abonada con trabajo presencial que requiere materiales</small>
+            <% } else { %>
+              <br><small>Razón: Empresa NO abonada con trabajo presencial</small>
+            <% } %>
+          </div>
+
+          <% if (ticket.estado_autorizacion === 'pendiente') { %>
+            <!-- Mensaje para todos los usuarios cuando está pendiente -->
+            <div class="alert alert-warning">
+              ⏳ <strong>Esperando autorización de SubAdmin</strong>
+              <p style="margin: 8px 0 0 0;">Este ticket no puede cerrarse hasta que un SubAdmin apruebe el cierre.</p>
+            </div>
+
+            <!-- Botones SOLO para SubAdmin -->
+            <% if (esSKN && user.rol === 'skn_subadmin') { %>
+              <div class="form-row" style="margin-top: var(--spacing-lg);">
+                <form action="/tickets/<%= ticket.id %>/autorizar-cierre" method="POST" style="display: inline;">
+                  <input type="hidden" name="accion" value="aprobar">
+                  <button type="submit" class="btn btn-success">✅ Aprobar Cierre</button>
+                </form>
+                <form action="/tickets/<%= ticket.id %>/autorizar-cierre" method="POST" style="display: inline;">
+                  <input type="hidden" name="accion" value="rechazar">
+                  <button type="submit" class="btn btn-danger">❌ Rechazar Cierre</button>
+                </form>
+              </div>
+            <% } %>
+          <% } else if (ticket.estado_autorizacion === 'aprobado') { %>
+            <div class="alert alert-success">
+              ✅ <strong>Cierre Aprobado</strong>
+              <% if (ticket.autorizado_por_nombre) { %>
+                <p style="margin: 8px 0 0 0;">
+                  Por: <strong><%= ticket.autorizado_por_nombre %></strong><br>
+                  Fecha: <%= new Date(ticket.fecha_autorizacion).toLocaleString('es-AR') %>
+                </p>
+              <% } %>
+            </div>
+          <% } else if (ticket.estado_autorizacion === 'rechazado') { %>
+            <div class="alert alert-error">
+              ❌ <strong>Cierre Rechazado</strong>
+              <% if (ticket.autorizado_por_nombre) { %>
+                <p style="margin: 8px 0 0 0;">
+                  Por: <strong><%= ticket.autorizado_por_nombre %></strong><br>
+                  Fecha: <%= new Date(ticket.fecha_autorizacion).toLocaleString('es-AR') %>
+                </p>
+              <% } %>
+              <p style="margin-top: 8px;">El ticket no puede cerrarse. Contacta con el SubAdmin para más detalles.</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+
     <!-- Comentarios -->
     <div class="detail-card" style="margin-top: var(--spacing-xl);">
       <div class="detail-header">
