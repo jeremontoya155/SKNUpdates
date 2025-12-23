@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="page-header">
+      <h1>➕ Nuevo Usuario</h1>
+      <a href="/usuarios" class="btn btn-secondary">⬅️ Volver</a>
+    </div>
+
+    <div class="form-card">
+      <form action="/usuarios/nuevo" method="POST" class="form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nombre">Nombre Completo *</label>
+            <input type="text" id="nombre" name="nombre" required placeholder="Juan Pérez">
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" required placeholder="juan@empresa.com">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="password">Contraseña *</label>
+            <input type="password" id="password" name="password" required minlength="6" placeholder="Mínimo 6 caracteres">
+            <small>La contraseña debe tener al menos 6 caracteres</small>
+          </div>
+
+          <div class="form-group">
+            <label for="password_confirm">Confirmar Contraseña *</label>
+            <input type="password" id="password_confirm" name="password_confirm" required minlength="6" placeholder="Repetir contraseña">
+          </div>
+        </div>
+
+        <% if (user.rol === 'skn_admin') { %>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="rol">Rol *</label>
+              <select id="rol" name="rol" required onchange="toggleEmpresa()">
+                <option value="">Seleccionar rol...</option>
+                <optgroup label="Roles SKN">
+                  <option value="skn_admin">👑 SKN Admin</option>
+                  <option value="skn_subadmin">⭐ SKN SubAdmin</option>
+                  <option value="skn_user">👤 SKN Técnico</option>
+                </optgroup>
+                <optgroup label="Roles Empresa">
+                  <option value="empresa_admin">🏢 Admin Empresa</option>
+                  <option value="empresa_user" selected>👥 Usuario Empresa</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="form-group" id="empresa_group">
+              <label for="empresa_id">Empresa</label>
+              <select id="empresa_id" name="empresa_id">
+                <option value="null">Sin empresa (solo para usuarios SKN)</option>
+                <% empresas.forEach(emp => { %>
+                  <option value="<%= emp.id %>"><%= emp.nombre %></option>
+                <% }) %>
+              </select>
+              <small id="empresa_hint">Requerido para usuarios tipo "Empresa"</small>
+            </div>
+          </div>
+        <% } else { %>
+          <input type="hidden" name="rol" value="empresa_user">
+          <input type="hidden" name="empresa_id" value="<%= user.empresa_id %>">
+          
+          <div class="alert alert-info">
+            ℹ️ El usuario se creará como <strong>Usuario de Empresa</strong> en tu empresa.
+          </div>
+        <% } %>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" onclick="return validarPassword()">✅ Crear Usuario</button>
+          <a href="/usuarios" class="btn btn-secondary">❌ Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    function toggleEmpresa() {
+      const rol = document.getElementById('rol').value;
+      const empresaGroup = document.getElementById('empresa_group');
+      const empresaSelect = document.getElementById('empresa_id');
+      const empresaHint = document.getElementById('empresa_hint');
+      
+      if (rol.startsWith('skn_')) {
+        empresaSelect.value = 'null';
+        empresaSelect.disabled = true;
+        empresaHint.textContent = 'No aplica para usuarios SKN';
+        empresaHint.style.color = '#666';
+      } else if (rol.startsWith('empresa_')) {
+        empresaSelect.disabled = false;
+        empresaSelect.required = true;
+        empresaHint.textContent = 'Requerido para usuarios tipo "Empresa"';
+        empresaHint.style.color = '#e74c3c';
+        
+        // Seleccionar primera empresa si está en null
+        if (empresaSelect.value === 'null') {
+          empresaSelect.selectedIndex = 1;
+        }
+      }
+    }
+
+    function validarPassword() {
+      const password = document.getElementById('password').value;
+      const confirm = document.getElementById('password_confirm').value;
+      
+      if (password !== confirm) {
+        alert('❌ Las contraseñas no coinciden');
+        return false;
+      }
+      
+      if (password.length < 6) {
+        alert('❌ La contraseña debe tener al menos 6 caracteres');
+        return false;
+      }
+      
+      return true;
+    }
+
+    // Inicializar estado al cargar
+    <% if (user.rol === 'skn_admin') { %>
+      toggleEmpresa();
+    <% } %>
+  </script>
+</body>
+</html>

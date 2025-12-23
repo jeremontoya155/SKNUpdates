@@ -12,7 +12,7 @@ const ticketsController = {
       const esSKNAdmin = ['skn_admin', 'skn_subadmin'].includes(user.rol);
       const esSKNUser = user.rol === 'skn_user';
       const esSKN = esSKNAdmin || esSKNUser;
-      const { buscar, estado, prioridad, empresa, fecha_desde, fecha_hasta } = req.query;
+      const { buscar, estado, prioridad, empresa, fecha_desde, fecha_hasta, asignado, sin_asignar } = req.query;
 
       let query;
       let params = [];
@@ -106,6 +106,18 @@ const ticketsController = {
         paramIndex++;
       }
 
+      // Filtro por sin asignar (solo para SKN)
+      if (sin_asignar === 'true' && esSKN) {
+        query += ` AND t.usuario_asignado IS NULL`;
+      }
+
+      // Filtro por técnico asignado (solo para SKN Admin)
+      if (asignado && esSKNAdmin) {
+        query += ` AND t.usuario_asignado = $${paramIndex}`;
+        params.push(parseInt(asignado, 10));
+        paramIndex++;
+      }
+
       query += ` ORDER BY 
         CASE t.estado 
           WHEN 'abierto' THEN 1 
@@ -119,11 +131,20 @@ const ticketsController = {
 
       // Obtener lista de empresas para SKN
       let empresas = [];
+      let tecnicos = [];
       if (esSKN) {
         const empresasResult = await db.query(
           'SELECT id, nombre FROM empresas WHERE activo = true ORDER BY nombre'
         );
         empresas = empresasResult.rows;
+
+        // Obtener lista de técnicos SKN
+        const tecnicosResult = await db.query(
+          `SELECT id, nombre FROM usuarios 
+           WHERE rol IN ('skn_admin', 'skn_subadmin', 'skn_user') AND activo = true 
+           ORDER BY nombre`
+        );
+        tecnicos = tecnicosResult.rows;
       }
 
       res.render('tickets/index', { 
@@ -131,7 +152,8 @@ const ticketsController = {
         tickets: result.rows,
         esSKN,
         empresas,
-        filtros: { buscar, estado, prioridad, empresa, fecha_desde, fecha_hasta },
+        tecnicos,
+        filtros: { buscar, estado, prioridad, empresa, fecha_desde, fecha_hasta, asignado, sin_asignar },
         user
       });
     } catch (error) {

@@ -18,7 +18,10 @@
       <div class="alert alert-error"><%= error %></div>
     <% } %>
 
-    <h1>Gestión de Usuarios</h1>
+    <div class="page-header">
+      <h1>👥 Gestión de Usuarios</h1>
+      <a href="/usuarios/nuevo" class="btn btn-primary">➕ Nuevo Usuario</a>
+    </div>
 
     <table>
       <thead>
@@ -74,13 +77,19 @@
             </td>
             <td><%= new Date(usuario.fecha_registro).toLocaleDateString('es-ES') %></td>
             <td>
-              <% if (!usuario.activo) { %>
+              <a href="/usuarios/<%= usuario.id %>/editar" class="btn-small btn-primary" title="Editar usuario">
+                ✏️ Editar
+              </a>
+              
+              <% if (!usuario.activo && user.rol === 'skn_admin') { %>
                 <form action="/usuarios/<%= usuario.id %>/aprobar" method="POST" style="display: inline;">
-                  <button type="submit" class="btn-small btn-success">Aprobar</button>
+                  <button type="submit" class="btn-small btn-success" title="Aprobar usuario">✅</button>
                 </form>
-              <% } else { %>
-                <form action="/usuarios/<%= usuario.id %>/desactivar" method="POST" style="display: inline;">
-                  <button type="submit" class="btn-small btn-danger">Desactivar</button>
+              <% } %>
+              
+              <% if (usuario.activo) { %>
+                <form action="/usuarios/<%= usuario.id %>/desactivar" method="POST" style="display: inline;" onsubmit="return confirm('¿Desactivar este usuario?')">
+                  <button type="submit" class="btn-small btn-danger" title="Desactivar usuario">🚫</button>
                 </form>
               <% } %>
             </td>
@@ -89,6 +98,54 @@
       </tbody>
     </table>
   </main>
+
+  <style>
+    .btn-small {
+      padding: 5px 10px;
+      font-size: 12px;
+      margin: 2px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: #2196F3;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #1976D2;
+    }
+
+    .btn-success {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #45a049;
+    }
+
+    .btn-danger {
+      background: #f44336;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #da190b;
+    }
+
+    td form {
+      margin: 0;
+    }
+
+    td {
+      white-space: nowrap;
+    }
+  </style>
 
   <%- include('../partials/footer') %>
 </body>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <% if (message) { %>
+      <div class="alert alert-success"><%= message %></div>
+    <% } %>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="page-header">
+      <h1>✏️ Editar Usuario</h1>
+      <a href="/usuarios" class="btn btn-secondary">⬅️ Volver</a>
+    </div>
+
+    <div class="form-card">
+      <form action="/usuarios/<%= usuario.id %>/editar" method="POST">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nombre">Nombre Completo *</label>
+            <input 
+              type="text" 
+              id="nombre" 
+              name="nombre" 
+              value="<%= usuario.nombre %>"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              value="<%= usuario.email %>"
+              required
+            >
+          </div>
+        </div>
+
+        <% if (user.rol === 'skn_admin') { %>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="rol">Rol *</label>
+              <select id="rol" name="rol" required>
+                <option value="skn_admin" <%= usuario.rol === 'skn_admin' ? 'selected' : '' %>>👑 SKN Admin</option>
+                <option value="skn_subadmin" <%= usuario.rol === 'skn_subadmin' ? 'selected' : '' %>>⭐ SKN SubAdmin</option>
+                <option value="skn_user" <%= usuario.rol === 'skn_user' ? 'selected' : '' %>>👤 SKN Usuario</option>
+                <option value="empresa_admin" <%= usuario.rol === 'empresa_admin' ? 'selected' : '' %>>🏢 Empresa Admin</option>
+                <option value="empresa_user" <%= usuario.rol === 'empresa_user' ? 'selected' : '' %>>👥 Empresa Usuario</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="empresa_id">Empresa</label>
+              <select id="empresa_id" name="empresa_id">
+                <option value="null">-- Sin empresa (SKN) --</option>
+                <% empresas.forEach(emp => { %>
+                  <option value="<%= emp.id %>" <%= usuario.empresa_id == emp.id ? 'selected' : '' %>>
+                    <%= emp.nombre %>
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="alert alert-info">
+            ℹ️ <strong>Rol:</strong> 
+            <% 
+              let rolLabel = '';
+              if (usuario.rol === 'empresa_admin') rolLabel = '🏢 Empresa Admin';
+              else if (usuario.rol === 'empresa_user') rolLabel = '👥 Empresa Usuario';
+            %>
+            <%= rolLabel %>
+          </div>
+        <% } %>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="password">Nueva Contraseña</label>
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              placeholder="Dejar vacío para mantener la actual"
+            >
+            <small style="color: #666;">Solo completar si deseas cambiar la contraseña</small>
+          </div>
+        </div>
+
+        <div class="alert alert-warning" style="margin-top: var(--spacing-md);">
+          ⚠️ <strong>Información del Usuario:</strong>
+          <ul style="margin: 8px 0 0 20px;">
+            <li><strong>Empresa:</strong> <%= usuario.empresa_nombre || 'SKN (sin empresa)' %></li>
+            <li><strong>Estado:</strong> <%= usuario.activo ? '✅ Activo' : '❌ Inactivo' %></li>
+            <li><strong>Fecha Registro:</strong> <%= new Date(usuario.fecha_registro).toLocaleString('es-AR') %></li>
+            <% if (usuario.fecha_aprobacion) { %>
+              <li><strong>Fecha Aprobación:</strong> <%= new Date(usuario.fecha_aprobacion).toLocaleString('es-AR') %></li>
+            <% } %>
+          </ul>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+          <a href="/usuarios" class="btn btn-secondary">❌ Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <style>
+    .form-card {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .form-actions .btn {
+      flex: 1;
+    }
+  </style>
+</body>
+</html>

@@ -75,6 +75,29 @@
             </div>
           <% } %>
 
+          <% if (esSKN && tecnicos && tecnicos.length > 0) { %>
+            <div class="form-group">
+              <select name="asignado" class="filter-select">
+                <option value="">👤 Todos los técnicos</option>
+                <% tecnicos.forEach(tec => { %>
+                  <option value="<%= tec.id %>" <%= filtros?.asignado == tec.id ? 'selected' : '' %>>
+                    <%= tec.nombre %>
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+          <% } %>
+
+          <% if (esSKN) { %>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" name="sin_asignar" value="true" 
+                       <%= filtros?.sin_asignar === 'true' ? 'checked' : '' %>>
+                📋 Sin asignar
+              </label>
+            </div>
+          <% } %>
+
           <div class="form-group">
             <input type="date" name="fecha_desde" placeholder="Desde" 
                    value="<%= filtros?.fecha_desde || '' %>" class="filter-input">

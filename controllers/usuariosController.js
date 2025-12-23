@@ -99,7 +99,7 @@ const usuariosController = {
       }
 
       // Validar que el rol sea válido
-      const rolesValidos = ['skn_admin', 'skn_user', 'empresa_admin', 'empresa_user'];
+      const rolesValidos = ['skn_admin', 'skn_user', 'skn_subadmin', 'empresa_admin', 'empresa_user'];
       if (!rolesValidos.includes(rol)) {
         req.session.error = 'Rol inválido';
         return res.redirect('/usuarios');
@@ -113,6 +113,217 @@ const usuariosController = {
       console.error('Error al cambiar rol:', error);
       req.session.error = 'Error al cambiar rol';
       res.redirect('/usuarios');
+    }
+  },
+
+  // Mostrar formulario de edición
+  mostrarEditar: async (req, res) => {
+    const { id } = req.params;
+    const user = req.session.user;
+
+    try {
+      // Obtener usuario a editar
+      let usuarioQuery;
+      if (user.rol === 'skn_admin') {
+        usuarioQuery = await db.query(
+          'SELECT u.*, e.nombre as empresa_nombre FROM usuarios u LEFT JOIN empresas e ON u.empresa_id = e.id WHERE u.id = $1',
+          [id]
+        );
+      } else if (user.rol === 'empresa_admin') {
+        usuarioQuery = await db.query(
+          'SELECT u.*, e.nombre as empresa_nombre FROM usuarios u LEFT JOIN empresas e ON u.empresa_id = e.id WHERE u.id = $1 AND u.empresa_id = $2',
+          [id, user.empresa_id]
+        );
+      } else {
+        return res.status(403).send('No tienes permisos');
+      }
+
+      if (usuarioQuery.rows.length === 0) {
+        req.session.error = 'Usuario no encontrado';
+        return res.redirect('/usuarios');
+      }
+
+      const usuarioEditar = usuarioQuery.rows[0];
+
+      // Obtener empresas (solo para SKN admin)
+      let empresas = [];
+      if (user.rol === 'skn_admin') {
+        const empresasQuery = await db.query('SELECT id, nombre FROM empresas WHERE activo = true ORDER BY nombre');
+        empresas = empresasQuery.rows;
+      }
+
+      res.render('usuarios/editar', {
+        title: 'Editar Usuario',
+        usuario: usuarioEditar,
+        empresas: empresas
+      });
+    } catch (error) {
+      console.error('Error al mostrar edición:', error);
+      req.session.error = 'Error al cargar usuario';
+      res.redirect('/usuarios');
+    }
+  },
+
+  // Guardar cambios de edición
+  editar: async (req, res) => {
+    const { id } = req.params;
+    const { nombre, email, rol, empresa_id, password } = req.body;
+    const user = req.session.user;
+
+    try {
+      // Validar permisos
+      if (user.rol === 'empresa_admin') {
+        const usuarioEditar = await db.query('SELECT empresa_id FROM usuarios WHERE id = $1', [id]);
+        if (usuarioEditar.rows.length === 0 || usuarioEditar.rows[0].empresa_id !== user.empresa_id) {
+          return res.status(403).send('No tienes permisos');
+        }
+      }
+
+      // Construir query dinámicamente
+      let updates = [];
+      let params = [];
+      let paramIndex = 1;
+
+      if (nombre && nombre.trim()) {
+        updates.push(`nombre = $${paramIndex}`);
+        params.push(nombre.trim());
+        paramIndex++;
+      }
+
+      if (email && email.trim()) {
+        updates.push(`email = $${paramIndex}`);
+        params.push(email.trim().toLowerCase());
+        paramIndex++;
+      }
+
+      // Solo SKN admin puede cambiar rol y empresa
+      if (user.rol === 'skn_admin') {
+        if (rol) {
+          const rolesValidos = ['skn_admin', 'skn_subadmin', 'skn_user', 'empresa_admin', 'empresa_user'];
+          if (rolesValidos.includes(rol)) {
+            updates.push(`rol = $${paramIndex}`);
+            params.push(rol);
+            paramIndex++;
+          }
+        }
+
+        if (empresa_id) {
+          updates.push(`empresa_id = $${paramIndex}`);
+          params.push(empresa_id === 'null' ? null : empresa_id);
+          paramIndex++;
+        }
+      }
+
+      // Si se proporciona nueva contraseña
+      if (password && password.trim()) {
+        const hashedPassword = await bcrypt.hash(password.trim(), 10);
+        updates.push(`password = $${paramIndex}`);
+        params.push(hashedPassword);
+        paramIndex++;
+      }
+
+      if (updates.length === 0) {
+        req.session.error = 'No hay cambios para guardar';
+        return res.redirect(`/usuarios/${id}/editar`);
+      }
+
+      // Agregar ID al final
+      params.push(id);
+
+      const query = `UPDATE usuarios SET ${updates.join(', ')} WHERE id = $${paramIndex}`;
+      await db.query(query, params);
+
+      req.session.message = 'Usuario actualizado exitosamente';
+      res.redirect('/usuarios');
+    } catch (error) {
+      console.error('Error al editar usuario:', error);
+      req.session.error = 'Error al actualizar usuario';
+      res.redirect(`/usuarios/${id}/editar`);
+    }
+  },
+
+  // Mostrar formulario de nuevo usuario
+  mostrarNuevo: async (req, res) => {
+    const user = req.session.user;
+
+    try {
+      // Obtener empresas (solo para SKN admin)
+      let empresas = [];
+      if (user.rol === 'skn_admin') {
+        const empresasQuery = await db.query('SELECT id, nombre FROM empresas WHERE activo = true ORDER BY nombre');
+        empresas = empresasQuery.rows;
+      }
+
+      res.render('usuarios/nuevo', {
+        title: 'Nuevo Usuario',
+        empresas: empresas
+      });
+    } catch (error) {
+      console.error('Error al mostrar formulario:', error);
+      req.session.error = 'Error al cargar formulario';
+      res.redirect('/usuarios');
+    }
+  },
+
+  // Crear nuevo usuario
+  crear: async (req, res) => {
+    const { nombre, email, password, rol, empresa_id } = req.body;
+    const user = req.session.user;
+
+    try {
+      // Validar campos requeridos
+      if (!nombre || !email || !password) {
+        req.session.error = 'Nombre, email y contraseña son obligatorios';
+        return res.redirect('/usuarios/nuevo');
+      }
+
+      // Validar email único
+      const emailExiste = await db.query('SELECT id FROM usuarios WHERE email = $1', [email.toLowerCase()]);
+      if (emailExiste.rows.length > 0) {
+        req.session.error = 'El email ya está registrado';
+        return res.redirect('/usuarios/nuevo');
+      }
+
+      // Determinar rol y empresa
+      let rolFinal = rol;
+      let empresaIdFinal = empresa_id;
+
+      if (user.rol === 'empresa_admin') {
+        // Admin de empresa solo puede crear usuarios de su empresa
+        rolFinal = 'empresa_user'; // Por defecto usuario normal
+        empresaIdFinal = user.empresa_id;
+      } else if (user.rol === 'skn_admin') {
+        // SKN admin puede crear cualquier tipo de usuario
+        const rolesValidos = ['skn_admin', 'skn_subadmin', 'skn_user', 'empresa_admin', 'empresa_user'];
+        if (!rolesValidos.includes(rol)) {
+          rolFinal = 'empresa_user';
+        }
+        
+        // Si es usuario SKN, empresa_id debe ser null
+        if (rolFinal.startsWith('skn_')) {
+          empresaIdFinal = null;
+        } else if (!empresaIdFinal || empresaIdFinal === 'null') {
+          req.session.error = 'Debes seleccionar una empresa para usuarios tipo empresa';
+          return res.redirect('/usuarios/nuevo');
+        }
+      }
+
+      // Hashear contraseña
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Insertar usuario
+      await db.query(
+        `INSERT INTO usuarios (nombre, email, password_hash, rol, empresa_id, activo, fecha_registro) 
+         VALUES ($1, $2, $3, $4, $5, true, TIMEZONE('America/Argentina/Buenos_Aires', NOW()))`,
+        [nombre.trim(), email.toLowerCase().trim(), hashedPassword, rolFinal, empresaIdFinal]
+      );
+
+      req.session.message = `Usuario ${nombre} creado exitosamente`;
+      res.redirect('/usuarios');
+    } catch (error) {
+      console.error('Error al crear usuario:', error);
+      req.session.error = 'Error al crear usuario';
+      res.redirect('/usuarios/nuevo');
     }
   }
 };
