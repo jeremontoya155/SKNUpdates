@@ -23,8 +23,86 @@
       <div class="alert alert-error"><%= error %></div>
     <% } %>
 
-    <div class="alert alert-warning">
-      ⚠️ Solo usuarios SKN pueden crear y gestionar empresas
+    <!-- Estadísticas Generales -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: var(--spacing-lg); border-radius: var(--border-radius); box-shadow: var(--box-shadow);">
+        <div style="font-size: 36px; font-weight: bold; margin-bottom: 8px;"><%= stats.total || 0 %></div>
+        <div style="font-size: 14px; opacity: 0.9;">🏢 Total Empresas</div>
+      </div>
+      <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; padding: var(--spacing-lg); border-radius: var(--border-radius); box-shadow: var(--box-shadow);">
+        <div style="font-size: 36px; font-weight: bold; margin-bottom: 8px;"><%= stats.activas || 0 %></div>
+        <div style="font-size: 14px; opacity: 0.9;">✅ Activas</div>
+      </div>
+      <div style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); color: white; padding: var(--spacing-lg); border-radius: var(--border-radius); box-shadow: var(--box-shadow);">
+        <div style="font-size: 36px; font-weight: bold; margin-bottom: 8px;"><%= stats.abonadas || 0 %></div>
+        <div style="font-size: 14px; opacity: 0.9;">💳 Abonadas</div>
+      </div>
+      <div style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); color: white; padding: var(--spacing-lg); border-radius: var(--border-radius); box-shadow: var(--box-shadow);">
+        <div style="font-size: 36px; font-weight: bold; margin-bottom: 8px;"><%= stats.no_abonadas || 0 %></div>
+        <div style="font-size: 14px; opacity: 0.9;">💳 No Abonadas</div>
+      </div>
+    </div>
+
+    <!-- Filtros de búsqueda -->
+    <div style="background: white; padding: var(--spacing-lg); border-radius: var(--border-radius); box-shadow: var(--box-shadow); margin-bottom: var(--spacing-xl);">
+      <h3 style="margin-top: 0; margin-bottom: var(--spacing-md); color: var(--primary-color);">🔍 Filtros de Búsqueda</h3>
+      <form method="GET" action="/empresas" style="display: grid; gap: var(--spacing-md);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-md);">
+          <!-- Búsqueda por texto -->
+          <div class="form-group">
+            <label for="buscar">🔎 Buscar</label>
+            <input type="text" id="buscar" name="buscar" placeholder="Nombre, email o CUIT..." 
+                   value="<%= filtros?.buscar || '' %>" class="search-input">
+          </div>
+
+          <!-- Filtro por estado -->
+          <div class="form-group">
+            <label for="estado">📊 Estado</label>
+            <select id="estado" name="estado" class="filter-select">
+              <option value="">Todas</option>
+              <option value="activas" <%= filtros?.estado === 'activas' ? 'selected' : '' %>>✅ Solo Activas</option>
+              <option value="inactivas" <%= filtros?.estado === 'inactivas' ? 'selected' : '' %>>⏸️ Solo Inactivas</option>
+            </select>
+          </div>
+
+          <!-- Filtro por abono -->
+          <div class="form-group">
+            <label for="tipo_abono">💳 Tipo de Abono</label>
+            <select id="tipo_abono" name="tipo_abono" class="filter-select">
+              <option value="">Todas</option>
+              <option value="abonadas" <%= filtros?.tipo_abono === 'abonadas' ? 'selected' : '' %>>💳 Abonadas</option>
+              <option value="no_abonadas" <%= filtros?.tipo_abono === 'no_abonadas' ? 'selected' : '' %>>💳 No Abonadas</option>
+            </select>
+          </div>
+
+          <!-- Ordenamiento -->
+          <div class="form-group">
+            <label for="orden">📑 Ordenar Por</label>
+            <select id="orden" name="orden" class="filter-select">
+              <option value="">Nombre A-Z</option>
+              <option value="usuarios_desc" <%= filtros?.orden === 'usuarios_desc' ? 'selected' : '' %>>👥 Más Usuarios</option>
+              <option value="materiales_desc" <%= filtros?.orden === 'materiales_desc' ? 'selected' : '' %>>📦 Más Equipos</option>
+              <option value="sucursales_desc" <%= filtros?.orden === 'sucursales_desc' ? 'selected' : '' %>>🏪 Más Sucursales</option>
+              <option value="fecha_desc" <%= filtros?.orden === 'fecha_desc' ? 'selected' : '' %>>🆕 Más Recientes</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: var(--spacing-sm);">
+          <button type="submit" class="btn btn-primary">🔍 Aplicar Filtros</button>
+          <a href="/empresas" class="btn btn-secondary">🔄 Limpiar</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Resultados -->
+    <div style="margin-bottom: var(--spacing-md);">
+      <h3 style="color: var(--text-secondary); font-weight: normal;">
+        Mostrando <%= empresas.length %> empresa<%= empresas.length !== 1 ? 's' : '' %>
+        <% if (filtros?.buscar || filtros?.estado || filtros?.tipo_abono) { %>
+          <span style="color: var(--primary-color);">(filtrado)</span>
+        <% } %>
+      </h3>
     </div>
 
     <% if (empresas.length === 0) { %>
@@ -34,34 +112,54 @@
       </div>
     <% } else { %>
       <!-- Grid de empresas -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: var(--spacing-lg); margin-top: var(--spacing-lg);">
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: var(--spacing-lg); margin-top: var(--spacing-lg);">
         <% empresas.forEach(emp => { %>
-          <div class="empresa-card" style="background: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); padding: var(--spacing-lg); transition: transform 0.3s ease, box-shadow 0.3s ease; border-left: 4px solid <%= emp.activo ? 'var(--success-color)' : '#ccc' %>;">
+          <div class="empresa-card" style="background: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); padding: var(--spacing-lg); transition: transform 0.3s ease, box-shadow 0.3s ease; border-left: 6px solid <%= emp.activo ? (emp.abonada ? '#4299e1' : '#ed8936') : '#cbd5e0' %>; position: relative; overflow: hidden;">
+            
+            <!-- Indicador de tipo de empresa (esquina superior derecha) -->
+            <% if (emp.abonada) { %>
+              <div style="position: absolute; top: 16px; right: -40px; background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); color: white; padding: 4px 50px; transform: rotate(45deg); font-size: 11px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                ABONADA
+              </div>
+            <% } else { %>
+              <div style="position: absolute; top: 16px; right: -40px; background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); color: white; padding: 4px 50px; transform: rotate(45deg); font-size: 11px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                NO ABONADA
+              </div>
+            <% } %>
+
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-md);">
-              <div>
-                <h3 style="margin: 0 0 8px 0; color: var(--primary-color); font-size: 1.3rem;">
+              <div style="flex: 1; padding-right: 60px;">
+                <h3 style="margin: 0 0 8px 0; color: var(--primary-color); font-size: 1.3rem; font-weight: 600;">
                   🏢 <%= emp.nombre %>
                 </h3>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <span class="badge <%= emp.activo ? 'badge-success' : 'badge-secondary' %>" style="font-size: 12px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                  <span class="badge <%= emp.activo ? 'badge-success' : 'badge-secondary' %>" style="font-size: 11px;">
                     <%= emp.activo ? '✅ Activa' : '⏸️ Inactiva' %>
                   </span>
-                  <% if (typeof emp.abonada !== 'undefined') { %>
-                    <span class="badge <%= emp.abonada ? 'badge-primary' : 'badge-warning' %>" style="font-size: 12px;">
-                      <%= emp.abonada ? '💳 Abonada' : '💳 No Abonada' %>
+                  <span class="badge <%= emp.abonada ? 'badge-primary' : 'badge-warning' %>" style="font-size: 11px; background: <%= emp.abonada ? '#4299e1' : '#ed8936' %>; border: none;">
+                    <%= emp.abonada ? '💳 ABONADA' : '⚠️ NO ABONADA' %>
+                  </span>
+                  <% if (emp.tickets_abiertos && parseInt(emp.tickets_abiertos) > 0) { %>
+                    <span class="badge badge-danger" style="font-size: 11px;">
+                      🎫 <%= emp.tickets_abiertos %> Tickets
                     </span>
                   <% } %>
                 </div>
+                <% if (emp.cuit) { %>
+                  <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                    📄 CUIT: <%= emp.cuit %>
+                  </div>
+                <% } %>
               </div>
-              <div style="display: flex; gap: 4px;">
+              <div style="display: flex; gap: 4px; flex-direction: column;">
                 <form action="/empresas/<%= emp.id %>/toggle" method="POST" style="margin: 0;">
-                  <button type="submit" class="btn-small <%= emp.activo ? 'btn-warning' : 'btn-success' %>" title="<%= emp.activo ? 'Desactivar' : 'Activar' %>">
-                    <%= emp.activo ? '❌' : '✅' %>
+                  <button type="submit" class="btn-small <%= emp.activo ? 'btn-warning' : 'btn-success' %>" title="<%= emp.activo ? 'Desactivar' : 'Activar' %>" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                    <%= emp.activo ? '⏸️' : '✅' %>
                   </button>
                 </form>
                 <% if (user.rol === 'skn_admin') { %>
                   <form action="/empresas/<%= emp.id %>/toggle-abonada" method="POST" style="margin: 0;">
-                    <button type="submit" class="btn-small btn-info" title="Cambiar estado de abonada">
+                    <button type="submit" class="btn-small btn-info" title="Cambiar estado de abonada" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: <%= emp.abonada ? '#ed8936' : '#4299e1' %>;">
                       💳
                     </button>
                   </form>
@@ -73,40 +171,57 @@
             <div style="margin-bottom: var(--spacing-md); padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--border-color);">
               <% if (emp.email) { %>
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                  <span style="color: var(--text-secondary);">📧</span>
-                  <span style="font-size: 14px;"><%= emp.email %></span>
+                  <span style="color: var(--text-secondary); font-size: 16px;">📧</span>
+                  <span style="font-size: 13px; color: var(--text-primary);"><%= emp.email %></span>
                 </div>
               <% } %>
               <% if (emp.telefono) { %>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="color: var(--text-secondary);">📞</span>
-                  <span style="font-size: 14px;"><%= emp.telefono %></span>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                  <span style="color: var(--text-secondary); font-size: 16px;">📞</span>
+                  <span style="font-size: 13px; color: var(--text-primary);"><%= emp.telefono %></span>
+                </div>
+              <% } %>
+              <% if (emp.direccion) { %>
+                <div style="display: flex; align-items: start; gap: 8px;">
+                  <span style="color: var(--text-secondary); font-size: 16px;">📍</span>
+                  <span style="font-size: 13px; color: var(--text-primary); line-height: 1.4;">
+                    <%= emp.direccion %>
+                    <% if (emp.ciudad) { %>, <%= emp.ciudad %><% } %>
+                    <% if (emp.provincia) { %>, <%= emp.provincia %><% } %>
+                  </span>
                 </div>
               <% } %>
             </div>
 
             <!-- Estadísticas -->
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
-              <div style="text-align: center; padding: var(--spacing-sm); background: #f5f5f5; border-radius: 8px;">
-                <div style="font-size: 24px; font-weight: bold; color: var(--primary-color);"><%= emp.total_usuarios || 0 %></div>
-                <div style="font-size: 12px; color: var(--text-secondary);">👥 Usuarios</div>
+              <div style="text-align: center; padding: var(--spacing-sm); background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 28px; font-weight: bold; color: #667eea;"><%= emp.total_usuarios || 0 %></div>
+                <div style="font-size: 11px; color: var(--text-secondary); font-weight: 500;">👥 Usuarios</div>
               </div>
-              <div style="text-align: center; padding: var(--spacing-sm); background: #f5f5f5; border-radius: 8px;">
-                <div style="font-size: 24px; font-weight: bold; color: var(--primary-color);"><%= emp.total_materiales || 0 %></div>
-                <div style="font-size: 12px; color: var(--text-secondary);">📦 Equipos</div>
+              <div style="text-align: center; padding: var(--spacing-sm); background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 28px; font-weight: bold; color: #48bb78;"><%= emp.total_materiales || 0 %></div>
+                <div style="font-size: 11px; color: var(--text-secondary); font-weight: 500;">📦 Equipos</div>
               </div>
-              <div style="text-align: center; padding: var(--spacing-sm); background: #f5f5f5; border-radius: 8px;">
-                <div style="font-size: 24px; font-weight: bold; color: var(--primary-color);"><%= emp.total_sucursales || 0 %></div>
-                <div style="font-size: 12px; color: var(--text-secondary);">🏪 Sucursales</div>
+              <div style="text-align: center; padding: var(--spacing-sm); background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 28px; font-weight: bold; color: #4299e1;"><%= emp.total_sucursales || 0 %></div>
+                <div style="font-size: 11px; color: var(--text-secondary); font-weight: 500;">🏪 Sucursales</div>
+              </div>
+            </div>
+
+            <!-- Indicador de tipo de servicio -->
+            <div style="background: <%= emp.abonada ? 'linear-gradient(135deg, #e6f2ff 0%, #d6eaff 100%)' : 'linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%)' %>; padding: var(--spacing-sm); border-radius: 8px; margin-bottom: var(--spacing-md); text-align: center; border: 1px solid <%= emp.abonada ? '#4299e1' : '#ed8936' %>;">
+              <div style="font-size: 12px; font-weight: bold; color: <%= emp.abonada ? '#2c5282' : '#9c4221' %>;">
+                <%= emp.abonada ? '✨ Servicio Premium - Visitas presenciales incluidas' : '⚠️ Servicio Básico - Visitas presenciales requieren autorización' %>
               </div>
             </div>
 
             <!-- Botones de Acción -->
             <div style="display: flex; gap: 8px;">
-              <a href="/empresas/<%= emp.id %>" class="btn btn-primary" style="flex: 1; text-align: center;">
+              <a href="/empresas/<%= emp.id %>" class="btn btn-primary" style="flex: 1; text-align: center; font-size: 14px;">
                 👁️ Ver Detalle
               </a>
-              <a href="/empresas/<%= emp.id %>/editar" class="btn btn-secondary" style="padding: 10px 16px;">
+              <a href="/empresas/<%= emp.id %>/editar" class="btn btn-secondary" style="padding: 10px 16px; font-size: 18px;">
                 ✏️
               </a>
             </div>

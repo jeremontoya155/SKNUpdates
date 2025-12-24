@@ -12,6 +12,10 @@ const ticketsController = {
       const esSKNAdmin = ['skn_admin', 'skn_subadmin'].includes(user.rol);
       const esSKNUser = user.rol === 'skn_user';
       const esSKN = esSKNAdmin || esSKNUser;
+      
+      // Verificar si es Belen (subadmin especial para finalizar tickets)
+      const esBelen = user.rol === 'skn_subadmin' && user.nombre && user.nombre.toLowerCase().includes('belen');
+      
       const { buscar, estado, prioridad, empresa, fecha_desde, fecha_hasta, asignado, sin_asignar } = req.query;
 
       let query;
@@ -19,19 +23,48 @@ const ticketsController = {
       let paramIndex = 1;
 
       if (esSKNAdmin) {
-        // SKN Admin/Subadmin ve todos los tickets con información de empresa
-        query = `
-          SELECT 
-            t.*, 
-            e.nombre as empresa_nombre,
-            u.nombre as solicitante_nombre, 
-            ua.nombre as asignado_nombre 
-          FROM tickets t 
-          JOIN empresas e ON t.empresa_id = e.id
-          LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
-          LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
-          WHERE 1=1
-        `;
+        // SKN Admin/Subadmin ve todos los tickets con información de empresa y sucursal
+        // BELEN solo verá tickets cerrados para finalizarlos, o los asignados a ella
+        if (esBelen) {
+          query = `
+            SELECT DISTINCT
+              t.*, 
+              e.nombre as empresa_nombre,
+              s.nombre as sucursal_nombre,
+              s.direccion as sucursal_direccion,
+              s.ciudad as sucursal_ciudad,
+              s.provincia as sucursal_provincia,
+              u.nombre as solicitante_nombre, 
+              ua.nombre as asignado_nombre 
+            FROM tickets t 
+            JOIN empresas e ON t.empresa_id = e.id
+            LEFT JOIN sucursales s ON t.sucursal_id = s.id
+            LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
+            LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
+            LEFT JOIN tickets_tecnicos tt ON t.id = tt.ticket_id AND tt.activo = true
+            WHERE (t.estado = 'cerrado' OR tt.usuario_id = $${paramIndex})
+          `;
+          params.push(user.id);
+          paramIndex++;
+        } else {
+          query = `
+            SELECT DISTINCT
+              t.*, 
+              e.nombre as empresa_nombre,
+              s.nombre as sucursal_nombre,
+              s.direccion as sucursal_direccion,
+              s.ciudad as sucursal_ciudad,
+              s.provincia as sucursal_provincia,
+              u.nombre as solicitante_nombre, 
+              ua.nombre as asignado_nombre 
+            FROM tickets t 
+            JOIN empresas e ON t.empresa_id = e.id
+            LEFT JOIN sucursales s ON t.sucursal_id = s.id
+            LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
+            LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
+            WHERE 1=1
+          `;
+        }
         
         // Filtro por empresa (solo para SKN Admin/Subadmin)
         if (empresa) {
@@ -40,29 +73,40 @@ const ticketsController = {
           paramIndex++;
         }
       } else if (esSKNUser) {
-        // SKN User solo ve tickets asignados a él
+        // SKN User solo ve tickets asignados a él (ahora usa tickets_tecnicos)
         query = `
-          SELECT 
+          SELECT DISTINCT
             t.*, 
             e.nombre as empresa_nombre,
+            s.nombre as sucursal_nombre,
+            s.direccion as sucursal_direccion,
+            s.ciudad as sucursal_ciudad,
+            s.provincia as sucursal_provincia,
             u.nombre as solicitante_nombre, 
             ua.nombre as asignado_nombre 
           FROM tickets t 
           JOIN empresas e ON t.empresa_id = e.id
+          LEFT JOIN sucursales s ON t.sucursal_id = s.id
           LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
           LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
-          WHERE t.usuario_asignado = $${paramIndex}
+          INNER JOIN tickets_tecnicos tt ON t.id = tt.ticket_id AND tt.activo = true
+          WHERE tt.usuario_id = $${paramIndex}
         `;
         params.push(user.id);
         paramIndex++;
       } else {
-        // Empresa solo ve sus tickets
+        // Empresa solo ve sus tickets (con estado cerrado visible, finalizado no)
         query = `
-          SELECT 
+          SELECT DISTINCT
             t.*, 
+            s.nombre as sucursal_nombre,
+            s.direccion as sucursal_direccion,
+            s.ciudad as sucursal_ciudad,
+            s.provincia as sucursal_provincia,
             u.nombre as solicitante_nombre, 
             ua.nombre as asignado_nombre 
           FROM tickets t 
+          LEFT JOIN sucursales s ON t.sucursal_id = s.id
           LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
           LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
           WHERE t.empresa_id = $${paramIndex}
@@ -108,12 +152,12 @@ const ticketsController = {
 
       // Filtro por sin asignar (solo para SKN)
       if (sin_asignar === 'true' && esSKN) {
-        query += ` AND t.usuario_asignado IS NULL`;
+        query += ` AND NOT EXISTS (SELECT 1 FROM tickets_tecnicos WHERE ticket_id = t.id AND activo = true)`;
       }
 
       // Filtro por técnico asignado (solo para SKN Admin)
-      if (asignado && esSKNAdmin) {
-        query += ` AND t.usuario_asignado = $${paramIndex}`;
+      if (asignado && esSKNAdmin && !esBelen) {
+        query += ` AND EXISTS (SELECT 1 FROM tickets_tecnicos WHERE ticket_id = t.id AND usuario_id = $${paramIndex} AND activo = true)`;
         params.push(parseInt(asignado, 10));
         paramIndex++;
       }
@@ -123,11 +167,28 @@ const ticketsController = {
           WHEN 'abierto' THEN 1 
           WHEN 'en_proceso' THEN 2 
           WHEN 'cerrado' THEN 3 
+          WHEN 'finalizado' THEN 4
         END,
         t.fecha_creacion DESC
       `;
 
       const result = await db.query(query, params);
+      
+      // Para cada ticket, obtener los técnicos asignados
+      const ticketsConTecnicos = await Promise.all(result.rows.map(async (ticket) => {
+        const tecnicosResult = await db.query(
+          `SELECT u.id, u.nombre 
+           FROM tickets_tecnicos tt
+           JOIN usuarios u ON tt.usuario_id = u.id
+           WHERE tt.ticket_id = $1 AND tt.activo = true
+           ORDER BY u.nombre`,
+          [ticket.id]
+        );
+        return {
+          ...ticket,
+          tecnicos_asignados: tecnicosResult.rows
+        };
+      }));
 
       // Obtener lista de empresas para SKN
       let empresas = [];
@@ -149,8 +210,9 @@ const ticketsController = {
 
       res.render('tickets/index', { 
         title: 'Tickets', 
-        tickets: result.rows,
+        tickets: ticketsConTecnicos,
         esSKN,
+        esBelen: esBelen || false,
         empresas,
         tecnicos,
         filtros: { buscar, estado, prioridad, empresa, fecha_desde, fecha_hasta, asignado, sin_asignar },
@@ -162,7 +224,9 @@ const ticketsController = {
         title: 'Tickets', 
         tickets: [],
         esSKN: false,
+        esBelen: false,
         empresas: [],
+        tecnicos: [],
         filtros: {},
         user: req.session.user
       });
@@ -176,6 +240,8 @@ const ticketsController = {
       const esSKN = ['skn_admin', 'skn_subadmin', 'skn_user'].includes(user.rol);
 
       let empresas = [];
+      let sucursales = [];
+      let tecnicos = [];
       
       if (esSKN) {
         // SKN puede crear tickets para cualquier empresa
@@ -183,6 +249,21 @@ const ticketsController = {
           'SELECT id, nombre FROM empresas WHERE activo = true ORDER BY nombre'
         );
         empresas = result.rows;
+        
+        // Obtener técnicos SKN para asignación múltiple
+        const tecnicosResult = await db.query(
+          `SELECT id, nombre FROM usuarios 
+           WHERE rol IN ('skn_admin', 'skn_subadmin', 'skn_user') AND activo = true 
+           ORDER BY nombre`
+        );
+        tecnicos = tecnicosResult.rows;
+      } else {
+        // Obtener sucursales de la empresa del usuario
+        const sucursalesResult = await db.query(
+          'SELECT id, nombre, direccion, ciudad, provincia FROM sucursales WHERE empresa_id = $1 AND activo = true ORDER BY es_principal DESC, nombre',
+          [user.empresa_id]
+        );
+        sucursales = sucursalesResult.rows;
       }
 
       // Obtener tipos de trabajo activos
@@ -198,6 +279,8 @@ const ticketsController = {
       res.render('tickets/nuevo', { 
         title: 'Nuevo Ticket',
         empresas,
+        sucursales,
+        tecnicos,
         tiposTrabajo: tiposTrabajo.rows,
         situaciones: situaciones.rows,
         esSKN,
@@ -212,13 +295,14 @@ const ticketsController = {
 
   // Crear ticket
   crear: async (req, res) => {
-    const { titulo, descripcion, prioridad, empresa_id, tipo_soporte, tipo_trabajo_id, situacion_soporte_id } = req.body;
+    const { titulo, descripcion, prioridad, empresa_id, tipo_soporte, tipo_trabajo_id, situacion_soporte_id, sucursal_id, tecnicos_ids } = req.body;
     const user = req.session.user;
     const esSKN = ['skn_admin', 'skn_subadmin', 'skn_user'].includes(user.rol);
     const file = req.file; // Imagen inicial
 
     try {
       let empresaFinal;
+      let sucursalFinal = sucursal_id || null;
       
       if (esSKN) {
         // SKN puede asignar a cualquier empresa
@@ -253,14 +337,36 @@ const ticketsController = {
         (!esAbonada && tipo_soporte === 'fisico')
       );
 
-      // Insertar ticket con tipo de soporte, tipo de trabajo y situación
+      // Insertar ticket con sucursal
       const ticketResult = await db.query(
-        `INSERT INTO tickets (empresa_id, usuario_solicitante, titulo, descripcion, prioridad, estado, tipo_soporte, tipo_trabajo_id, situacion_soporte_id, requiere_autorizacion) 
-         VALUES ($1, $2, $3, $4, $5, 'abierto', $6, $7, $8, $9) RETURNING id`,
-        [empresaFinal, user.id, titulo, descripcion, prioridad || 'media', tipo_soporte || 'remoto', tipo_trabajo_id || null, situacion_soporte_id || null, requiereAutorizacion]
+        `INSERT INTO tickets (empresa_id, usuario_solicitante, titulo, descripcion, prioridad, estado, tipo_soporte, tipo_trabajo_id, situacion_soporte_id, requiere_autorizacion, sucursal_id) 
+         VALUES ($1, $2, $3, $4, $5, 'abierto', $6, $7, $8, $9, $10) RETURNING id`,
+        [empresaFinal, user.id, titulo, descripcion, prioridad || 'media', tipo_soporte || 'remoto', tipo_trabajo_id || null, situacion_soporte_id || null, requiereAutorizacion, sucursalFinal]
       );
 
       const ticketId = ticketResult.rows[0].id;
+
+      // Asignar técnicos si se proporcionaron (solo SKN puede asignar)
+      if (esSKN && tecnicos_ids) {
+        const tecnicosArray = Array.isArray(tecnicos_ids) ? tecnicos_ids : [tecnicos_ids];
+        for (const tecnicoId of tecnicosArray) {
+          if (tecnicoId) {
+            await db.query(
+              `INSERT INTO tickets_tecnicos (ticket_id, usuario_id, asignado_por)
+               VALUES ($1, $2, $3)`,
+              [ticketId, tecnicoId, user.id]
+            );
+          }
+        }
+        
+        // Si se asignaron técnicos, actualizar el campo legacy usuario_asignado con el primer técnico
+        if (tecnicosArray.length > 0 && tecnicosArray[0]) {
+          await db.query(
+            'UPDATE tickets SET usuario_asignado = $1 WHERE id = $2',
+            [tecnicosArray[0], ticketId]
+          );
+        }
+      }
 
       // Si hay imagen inicial, guardarla
       if (file) {
@@ -290,40 +396,52 @@ const ticketsController = {
     const esSKNAdmin = ['skn_admin', 'skn_subadmin'].includes(user.rol);
     const esSKNUser = user.rol === 'skn_user';
     const esSKN = esSKNAdmin || esSKNUser;
+    const esBelen = user.rol === 'skn_subadmin' && user.nombre && user.nombre.toLowerCase().includes('belen');
 
     try {
       let query;
       let params;
 
       if (esSKNAdmin) {
-        // SKN Admin/Subadmin puede ver cualquier ticket
+        // SKN Admin/Subadmin puede ver cualquier ticket (con sucursal)
         query = `
           SELECT 
             t.*, 
             e.nombre as empresa_nombre,
             e.abonada as empresa_abonada,
+            s.nombre as sucursal_nombre,
+            s.direccion as sucursal_direccion,
+            s.ciudad as sucursal_ciudad,
+            s.provincia as sucursal_provincia,
             u.nombre as solicitante_nombre, 
             ua.nombre as asignado_nombre,
             tt.nombre as tipo_trabajo_nombre,
             tt.descripcion as tipo_trabajo_descripcion,
             tt.color as tipo_trabajo_color,
-            uauth.nombre as autorizado_por_nombre
+            uauth.nombre as autorizado_por_nombre,
+            ufin.nombre as finalizado_por_nombre
           FROM tickets t 
           JOIN empresas e ON t.empresa_id = e.id
+          LEFT JOIN sucursales s ON t.sucursal_id = s.id
           LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
           LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
           LEFT JOIN tipos_trabajo tt ON t.tipo_trabajo_id = tt.id
           LEFT JOIN usuarios uauth ON t.autorizado_por = uauth.id
+          LEFT JOIN usuarios ufin ON t.finalizado_por = ufin.id
           WHERE t.id = $1
         `;
         params = [id];
       } else if (esSKNUser) {
-        // SKN User solo puede ver tickets asignados a él
+        // SKN User solo puede ver tickets asignados a él (con sucursal)
         query = `
           SELECT 
             t.*, 
             e.nombre as empresa_nombre,
             e.abonada as empresa_abonada,
+            s.nombre as sucursal_nombre,
+            s.direccion as sucursal_direccion,
+            s.ciudad as sucursal_ciudad,
+            s.provincia as sucursal_provincia,
             u.nombre as solicitante_nombre, 
             ua.nombre as asignado_nombre,
             tt.nombre as tipo_trabajo_nombre,
@@ -332,24 +450,34 @@ const ticketsController = {
             uauth.nombre as autorizado_por_nombre
           FROM tickets t 
           JOIN empresas e ON t.empresa_id = e.id
+          LEFT JOIN sucursales s ON t.sucursal_id = s.id
           LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
           LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
           LEFT JOIN tipos_trabajo tt ON t.tipo_trabajo_id = tt.id
           LEFT JOIN usuarios uauth ON t.autorizado_por = uauth.id
-          WHERE t.id = $1 AND t.usuario_asignado = $2
+          WHERE t.id = $1 AND EXISTS (
+            SELECT 1 FROM tickets_tecnicos 
+            WHERE ticket_id = t.id AND usuario_id = $2 AND activo = true
+          )
         `;
         params = [id, user.id];
       } else {
-        // Empresa solo ve sus tickets
+        // Empresa solo ve sus tickets (ocultar estado finalizado)
         query = `
           SELECT 
-            t.*, 
+            t.*,
+            CASE WHEN t.estado = 'finalizado' THEN 'cerrado' ELSE t.estado END as estado,
+            s.nombre as sucursal_nombre,
+            s.direccion as sucursal_direccion,
+            s.ciudad as sucursal_ciudad,
+            s.provincia as sucursal_provincia,
             u.nombre as solicitante_nombre, 
             ua.nombre as asignado_nombre,
             tt.nombre as tipo_trabajo_nombre,
             tt.descripcion as tipo_trabajo_descripcion,
             tt.color as tipo_trabajo_color
           FROM tickets t 
+          LEFT JOIN sucursales s ON t.sucursal_id = s.id
           LEFT JOIN usuarios u ON t.usuario_solicitante = u.id 
           LEFT JOIN usuarios ua ON t.usuario_asignado = ua.id 
           LEFT JOIN tipos_trabajo tt ON t.tipo_trabajo_id = tt.id
@@ -363,6 +491,16 @@ const ticketsController = {
       if (ticket.rows.length === 0) {
         return res.status(404).send('Ticket no encontrado');
       }
+
+      // Obtener técnicos asignados al ticket
+      const tecnicosAsignados = await db.query(
+        `SELECT u.id, u.nombre, tt.fecha_asignacion
+         FROM tickets_tecnicos tt
+         JOIN usuarios u ON tt.usuario_id = u.id
+         WHERE tt.ticket_id = $1 AND tt.activo = true
+         ORDER BY tt.fecha_asignacion DESC`,
+        [id]
+      );
 
       // Obtener comentarios
       const comentarios = await db.query(
@@ -401,8 +539,10 @@ const ticketsController = {
         ticket: ticket.rows[0],
         comentarios: comentarios.rows,
         imagenes: imagenes.rows,
+        tecnicosAsignados: tecnicosAsignados.rows,
         usuariosSKN,
         esSKN,
+        esBelen: esBelen || false,
         user
       });
     } catch (error) {
@@ -436,12 +576,19 @@ const ticketsController = {
     const { id } = req.params;
     const { estado } = req.body;
     const user = req.session.user;
-    const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user';
+    const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user' || user.rol === 'skn_subadmin';
+    const esBelen = user.rol === 'skn_subadmin' && user.nombre && user.nombre.toLowerCase().includes('belen');
 
     try {
       // Solo SKN puede cambiar estado
       if (!esSKN) {
         return res.status(403).send('Solo usuarios SKN pueden cambiar el estado de tickets');
+      }
+      
+      // Solo Belen puede marcar tickets como "finalizado"
+      if (estado === 'finalizado' && !esBelen) {
+        req.session.error = 'Solo Belen puede marcar tickets como finalizados';
+        return res.redirect(`/tickets/${id}`);
       }
 
       // Si se intenta poner en proceso, verificar si es presencial y requiere checklist
@@ -515,6 +662,12 @@ const ticketsController = {
           "UPDATE tickets SET estado = $1, fecha_cierre = TIMEZONE('America/Argentina/Buenos_Aires', NOW()) WHERE id = $2",
           [estado, id]
         );
+      } else if (estado === 'finalizado') {
+        // Finalizar ticket (solo Belen)
+        await db.query(
+          "UPDATE tickets SET estado = $1, finalizado_por = $2, fecha_finalizacion = TIMEZONE('America/Argentina/Buenos_Aires', NOW()) WHERE id = $3",
+          [estado, user.id, id]
+        );
       } else {
         await db.query(
           'UPDATE tickets SET estado = $1, fecha_cierre = NULL WHERE id = $2',
@@ -531,12 +684,12 @@ const ticketsController = {
     }
   },
 
-  // Asignar ticket (SOLO SKN)
+  // Asignar ticket (SOLO SKN) - Asignación múltiple de técnicos
   asignar: async (req, res) => {
     const { id } = req.params;
-    const { usuario_asignado } = req.body;
+    const { tecnicos_ids } = req.body;
     const user = req.session.user;
-    const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user';
+    const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user' || user.rol === 'skn_subadmin';
 
     try {
       // Solo SKN puede asignar tickets
@@ -544,14 +697,36 @@ const ticketsController = {
         return res.status(403).send('Solo usuarios SKN pueden asignar tickets');
       }
 
-      // Solo asignar el usuario, NO cambiar el estado
-      // El técnico asignado deberá cambiar manualmente a "en_proceso" después de completar el checklist
+      // Desactivar asignaciones anteriores
       await db.query(
-        'UPDATE tickets SET usuario_asignado = $1 WHERE id = $2',
-        [usuario_asignado, id]
+        'UPDATE tickets_tecnicos SET activo = false WHERE ticket_id = $1',
+        [id]
       );
 
-      req.session.message = 'Ticket asignado exitosamente';
+      // Asignar nuevos técnicos
+      const tecnicosArray = Array.isArray(tecnicos_ids) ? tecnicos_ids : [tecnicos_ids];
+      for (const tecnicoId of tecnicosArray) {
+        if (tecnicoId) {
+          // Insertar o reactivar asignación
+          await db.query(
+            `INSERT INTO tickets_tecnicos (ticket_id, usuario_id, asignado_por, activo)
+             VALUES ($1, $2, $3, true)
+             ON CONFLICT (ticket_id, usuario_id)
+             DO UPDATE SET activo = true, fecha_asignacion = CURRENT_TIMESTAMP, asignado_por = $3`,
+            [id, tecnicoId, user.id]
+          );
+        }
+      }
+
+      // Actualizar el campo legacy usuario_asignado con el primer técnico
+      if (tecnicosArray.length > 0 && tecnicosArray[0]) {
+        await db.query(
+          'UPDATE tickets SET usuario_asignado = $1 WHERE id = $2',
+          [tecnicosArray[0], id]
+        );
+      }
+
+      req.session.message = 'Técnicos asignados exitosamente';
       res.redirect(`/tickets/${id}`);
     } catch (error) {
       console.error('Error al asignar ticket:', error);
@@ -564,7 +739,7 @@ const ticketsController = {
   asignarme: async (req, res) => {
     const { id } = req.params;
     const user = req.session.user;
-    const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user';
+    const esSKN = user.rol === 'skn_admin' || user.rol === 'skn_user' || user.rol === 'skn_subadmin';
 
     try {
       // Solo SKN puede asignarse tickets
@@ -572,8 +747,16 @@ const ticketsController = {
         return res.status(403).send('Solo usuarios SKN pueden asignarse tickets');
       }
 
-      // Solo asignar el usuario, NO cambiar el estado
-      // El técnico deberá cambiar manualmente a "en_proceso" después de completar el checklist
+      // Insertar o reactivar asignación
+      await db.query(
+        `INSERT INTO tickets_tecnicos (ticket_id, usuario_id, asignado_por, activo)
+         VALUES ($1, $2, $3, true)
+         ON CONFLICT (ticket_id, usuario_id)
+         DO UPDATE SET activo = true, fecha_asignacion = CURRENT_TIMESTAMP`,
+        [id, user.id, user.id]
+      );
+
+      // Actualizar el campo legacy usuario_asignado
       await db.query(
         'UPDATE tickets SET usuario_asignado = $1 WHERE id = $2',
         [user.id, id]
@@ -842,6 +1025,26 @@ const ticketsController = {
       console.error('Error al autorizar cierre:', error);
       req.session.error = 'Error al autorizar cierre';
       res.redirect(`/tickets/${id}`);
+    }
+  },
+
+  // Obtener sucursales por empresa (API para formulario)
+  getSucursalesPorEmpresa: async (req, res) => {
+    const { empresa_id } = req.params;
+    
+    try {
+      const sucursales = await db.query(
+        `SELECT id, nombre, direccion, ciudad, provincia 
+         FROM sucursales 
+         WHERE empresa_id = $1 AND activo = true 
+         ORDER BY es_principal DESC, nombre`,
+        [empresa_id]
+      );
+      
+      res.json(sucursales.rows);
+    } catch (error) {
+      console.error('Error al obtener sucursales:', error);
+      res.status(500).json({ error: 'Error al obtener sucursales' });
     }
   }
 };

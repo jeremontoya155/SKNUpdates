@@ -44,6 +44,9 @@
           } else if (ticket.estado === 'cerrado') {
             estadoBadge = 'badge-success';
             estadoTexto = '✅ Cerrado';
+          } else if (ticket.estado === 'finalizado') {
+            estadoBadge = 'badge-success';
+            estadoTexto = '🏁 Finalizado';
           } else if (ticket.estado === 'cancelado') {
             estadoBadge = 'badge';
             estadoTexto = '⛔ Cancelado';
@@ -79,14 +82,40 @@
           </div>
         <% } %>
 
+        <% if (ticket.sucursal_nombre) { %>
+          <div class="detail-row">
+            <div class="detail-item">
+              <label>📍 Sucursal / Sede</label>
+              <p>
+                <strong><%= ticket.sucursal_nombre %></strong><br>
+                <% if (ticket.sucursal_direccion) { %>
+                  <span style="color: #2ecc71; font-weight: bold;">
+                    � <%= ticket.sucursal_direccion %>
+                    <% if (ticket.sucursal_ciudad) { %>, <%= ticket.sucursal_ciudad %><% } %>
+                    <% if (ticket.sucursal_provincia) { %>, <%= ticket.sucursal_provincia %><% } %>
+                  </span>
+                <% } %>
+              </p>
+            </div>
+          </div>
+        <% } %>
+
         <div class="detail-row">
           <div class="detail-item">
-            <label>👤 Solicitante</label>
+            <label>�👤 Solicitante</label>
             <p><%= ticket.solicitante_nombre %></p>
           </div>
           <div class="detail-item">
-            <label>👨‍💼 Asignado a</label>
-            <p><%= ticket.asignado_nombre || '⚪ Sin asignar' %></p>
+            <label>👨‍💼 Técnicos Asignados</label>
+            <% if (tecnicosAsignados && tecnicosAsignados.length > 0) { %>
+              <p>
+                <% tecnicosAsignados.forEach((tecnico, index) => { %>
+                  <%= tecnico.nombre %><% if (index < tecnicosAsignados.length - 1) { %>, <% } %>
+                <% }); %>
+              </p>
+            <% } else { %>
+              <p>⚪ Sin asignar</p>
+            <% } %>
           </div>
         </div>
 
@@ -217,21 +246,25 @@
               <button type="submit" class="btn btn-primary">👤 Asignarme este ticket</button>
             </form>
 
-            <form action="/tickets/<%= ticket.id %>/asignar" method="POST" style="display: inline;">
-              <select name="usuario_asignado" required>
-                <option value="">Asignar a otro usuario...</option>
+            <form action="/tickets/<%= ticket.id %>/asignar" method="POST" style="display: inline-block; vertical-align: top;">
+              <label for="tecnicos_ids" style="display: block; margin-bottom: 8px; font-weight: bold;">Asignar Técnicos (Múltiple):</label>
+              <select name="tecnicos_ids" id="tecnicos_ids" multiple size="5" required style="min-width: 300px; margin-bottom: 8px;">
                 <% usuariosSKN.forEach(u => { 
                   let rolLabel = '';
                   if (u.rol === 'skn_admin') rolLabel = '👑 Admin';
                   else if (u.rol === 'skn_subadmin') rolLabel = '⭐ SubAdmin';
                   else if (u.rol === 'skn_user') rolLabel = '👤 Técnico';
+                  
+                  // Verificar si el técnico está actualmente asignado
+                  const estaAsignado = tecnicosAsignados && tecnicosAsignados.some(t => t.id === u.id);
                 %>
-                  <option value="<%= u.id %>" <%= ticket.usuario_asignado == u.id ? 'selected' : '' %>>
+                  <option value="<%= u.id %>" <%= estaAsignado ? 'selected' : '' %>>
                     <%= u.nombre_completo %> (<%= rolLabel %>)
                   </option>
                 <% }) %>
-              </select>
-              <button type="submit" class="btn btn-warning">👥 Asignar</button>
+              </select><br>
+              <small style="display: block; margin-bottom: 8px;">💡 Mantén presionado Ctrl (Windows) o Cmd (Mac) para seleccionar múltiples</small>
+              <button type="submit" class="btn btn-warning">👥 Asignar Técnicos</button>
             </form>
           </div>
 
@@ -249,8 +282,14 @@
                   <option value="abierto" <%= ticket.estado === 'abierto' ? 'selected' : '' %>>⏳ Abierto</option>
                   <option value="en_proceso" <%= ticket.estado === 'en_proceso' ? 'selected' : '' %>>🔄 En Proceso</option>
                   <option value="cerrado" <%= ticket.estado === 'cerrado' ? 'selected' : '' %>>✅ Cerrado</option>
+                  <% if (esBelen) { %>
+                    <option value="finalizado" <%= ticket.estado === 'finalizado' ? 'selected' : '' %>>🏁 Finalizado</option>
+                  <% } %>
                   <option value="cancelado" <%= ticket.estado === 'cancelado' ? 'selected' : '' %>>⛔ Cancelado</option>
                 </select>
+                <% if (esBelen && ticket.estado === 'cerrado') { %>
+                  <small style="color: #2ecc71; font-weight: bold;">✨ Puedes marcar como FINALIZADO para completar el proceso</small>
+                <% } %>
               </div>
               <button type="submit" class="btn btn-primary">💾 Actualizar Estado</button>
             </form>

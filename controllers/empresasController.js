@@ -10,24 +10,83 @@ exports.index = async (req, res) => {
       return res.status(403).send('Solo usuarios SKN pueden gestionar empresas');
     }
 
+    // Obtener filtros de la query
+    const { buscar, estado, tipo_abono, orden } = req.query;
+    
+    let whereConditions = [];
+    let params = [];
+    let paramIndex = 1;
+
+    // Filtro de búsqueda
+    if (buscar) {
+      whereConditions.push(`(LOWER(e.nombre) LIKE LOWER($${paramIndex}) OR LOWER(e.email) LIKE LOWER($${paramIndex}) OR LOWER(e.cuit) LIKE LOWER($${paramIndex}))`);
+      params.push(`%${buscar}%`);
+      paramIndex++;
+    }
+
+    // Filtro de estado
+    if (estado === 'activas') {
+      whereConditions.push('e.activo = true');
+    } else if (estado === 'inactivas') {
+      whereConditions.push('e.activo = false');
+    }
+
+    // Filtro de tipo de abono
+    if (tipo_abono === 'abonadas') {
+      whereConditions.push('e.abonada = true');
+    } else if (tipo_abono === 'no_abonadas') {
+      whereConditions.push('e.abonada = false');
+    }
+
+    const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+
+    // Orden
+    let orderClause = 'ORDER BY e.nombre';
+    if (orden === 'usuarios_desc') {
+      orderClause = 'ORDER BY total_usuarios DESC, e.nombre';
+    } else if (orden === 'materiales_desc') {
+      orderClause = 'ORDER BY total_materiales DESC, e.nombre';
+    } else if (orden === 'sucursales_desc') {
+      orderClause = 'ORDER BY total_sucursales DESC, e.nombre';
+    } else if (orden === 'fecha_desc') {
+      orderClause = 'ORDER BY e.id DESC';
+    }
+
     const result = await pool.query(
       `SELECT 
         e.*,
         COUNT(DISTINCT u.id) as total_usuarios,
         COUNT(DISTINCT m.id) as total_materiales,
-        COUNT(DISTINCT s.id) as total_sucursales
+        COUNT(DISTINCT s.id) as total_sucursales,
+        COUNT(DISTINCT t.id) FILTER (WHERE t.estado != 'cerrado' AND t.estado != 'finalizado') as tickets_abiertos
        FROM empresas e
        LEFT JOIN usuarios u ON e.id = u.empresa_id
        LEFT JOIN materiales m ON e.id = m.empresa_id
        LEFT JOIN sucursales s ON e.id = s.empresa_id
+       LEFT JOIN tickets t ON e.id = t.empresa_id
+       ${whereClause}
        GROUP BY e.id
-       ORDER BY e.nombre`
+       ${orderClause}`,
+      params
     );
+
+    // Estadísticas generales
+    const stats = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE activo = true) as activas,
+        COUNT(*) FILTER (WHERE activo = false) as inactivas,
+        COUNT(*) FILTER (WHERE abonada = true) as abonadas,
+        COUNT(*) FILTER (WHERE abonada = false) as no_abonadas
+      FROM empresas
+    `);
 
     res.render('empresas/index', {
       title: 'Gestión de Empresas',
       user: req.session.user,
       empresas: result.rows,
+      stats: stats.rows[0],
+      filtros: { buscar, estado, tipo_abono, orden },
       message: req.session.message,
       error: req.session.error
     });

@@ -23,83 +23,367 @@
       <a href="/usuarios/nuevo" class="btn btn-primary">➕ Nuevo Usuario</a>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Email</th>
-          <th>Empresa</th>
-          <th>Rol</th>
-          <th>Estado</th>
-          <th>Fecha Registro</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% usuarios.forEach(usuario => { %>
+    <!-- Panel de Estadísticas -->
+    <div class="stats-container">
+      <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="stat-icon">👥</div>
+        <div class="stat-info">
+          <div class="stat-number"><%= stats.total %></div>
+          <div class="stat-label">Total Usuarios</div>
+        </div>
+      </div>
+      
+      <div class="stat-card" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+          <div class="stat-number"><%= stats.activos %></div>
+          <div class="stat-label">Activos</div>
+        </div>
+      </div>
+      
+      <div class="stat-card" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-info">
+          <div class="stat-number"><%= stats.pendientes %></div>
+          <div class="stat-label">Pendientes</div>
+        </div>
+      </div>
+      
+      <div class="stat-card" style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);">
+        <div class="stat-icon">🛡️</div>
+        <div class="stat-info">
+          <div class="stat-number"><%= stats.skn_users %></div>
+          <div class="stat-label">Usuarios SKN</div>
+        </div>
+      </div>
+
+      <div class="stat-card" style="background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);">
+        <div class="stat-icon">🏢</div>
+        <div class="stat-info">
+          <div class="stat-number"><%= stats.empresa_users %></div>
+          <div class="stat-label">Usuarios Empresa</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de Filtros -->
+    <div class="filters-panel">
+      <form method="GET" action="/usuarios" class="filters-form">
+        <div class="filter-group">
+          <label>🔍 Buscar</label>
+          <input 
+            type="text" 
+            name="buscar" 
+            placeholder="Nombre o email..." 
+            value="<%= filtros.buscar %>"
+          >
+        </div>
+
+        <% if (user.rol === 'skn_admin' && empresas.length > 0) { %>
+        <div class="filter-group">
+          <label>🏢 Empresa</label>
+          <select name="empresa">
+            <option value="">Todas las empresas</option>
+            <% empresas.forEach(empresa => { %>
+              <option value="<%= empresa.id %>" <%= filtros.empresa == empresa.id ? 'selected' : '' %>>
+                <%= empresa.nombre %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+        <% } %>
+
+        <div class="filter-group">
+          <label>👤 Rol</label>
+          <select name="rol">
+            <option value="">Todos los roles</option>
+            <option value="skn_admin" <%= filtros.rol === 'skn_admin' ? 'selected' : '' %>>👑 SKN Admin</option>
+            <option value="skn_subadmin" <%= filtros.rol === 'skn_subadmin' ? 'selected' : '' %>>🛡️ SKN SubAdmin</option>
+            <option value="skn_user" <%= filtros.rol === 'skn_user' ? 'selected' : '' %>>👤 SKN Usuario</option>
+            <option value="empresa_admin" <%= filtros.rol === 'empresa_admin' ? 'selected' : '' %>>🏢 Empresa Admin</option>
+            <option value="empresa_user" <%= filtros.rol === 'empresa_user' ? 'selected' : '' %>>👥 Empresa Usuario</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>📊 Estado</label>
+          <select name="estado">
+            <option value="">Todos</option>
+            <option value="activo" <%= filtros.estado === 'activo' ? 'selected' : '' %>>✅ Activos</option>
+            <option value="pendiente" <%= filtros.estado === 'pendiente' ? 'selected' : '' %>>⏳ Pendientes</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>📋 Ordenar por</label>
+          <select name="orden">
+            <option value="fecha_desc" <%= filtros.orden === 'fecha_desc' ? 'selected' : '' %>>Más recientes</option>
+            <option value="fecha_asc" <%= filtros.orden === 'fecha_asc' ? 'selected' : '' %>>Más antiguos</option>
+            <option value="nombre" <%= filtros.orden === 'nombre' ? 'selected' : '' %>>Nombre A-Z</option>
+            <option value="empresa" <%= filtros.orden === 'empresa' ? 'selected' : '' %>>Empresa A-Z</option>
+            <option value="rol" <%= filtros.orden === 'rol' ? 'selected' : '' %>>Rol</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+          <a href="/usuarios" class="btn btn-secondary">Limpiar</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Contador de resultados -->
+    <div class="results-count">
+      Mostrando <%= usuarios.length %> usuario<%= usuarios.length !== 1 ? 's' : '' %>
+      <% if (filtros.buscar || filtros.empresa || filtros.rol || filtros.estado) { %>
+        <span style="color: #4299e1; font-weight: 600;">(filtrado)</span>
+      <% } %>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
           <tr>
-            <td><%= usuario.id %></td>
-            <td><%= usuario.nombre %></td>
-            <td><%= usuario.email %></td>
-            <td><%= usuario.empresa_nombre || 'N/A' %></td>
-            <td>
-              <% if (user.rol === 'skn_admin') { %>
-                <form action="/usuarios/<%= usuario.id %>/cambiar-rol" method="POST" style="display: inline;">
-                  <select name="rol" onchange="this.form.submit()" class="<%= usuario.rol.startsWith('skn_') ? 'badge-success' : 'badge-secondary' %>">
-                    <option value="skn_admin" <%= usuario.rol === 'skn_admin' ? 'selected' : '' %>>👑 SKN Admin</option>
-                    <option value="skn_subadmin" <%= usuario.rol === 'skn_subadmin' ? 'selected' : '' %>>🛡️ SKN SubAdmin</option>
-                    <option value="skn_user" <%= usuario.rol === 'skn_user' ? 'selected' : '' %>>👤 SKN Usuario</option>
-                    <option value="empresa_admin" <%= usuario.rol === 'empresa_admin' ? 'selected' : '' %>>🏢 Empresa Admin</option>
-                    <option value="empresa_user" <%= usuario.rol === 'empresa_user' ? 'selected' : '' %>>👥 Empresa Usuario</option>
-                  </select>
-                </form>
-              <% } else { %>
-                <% if (usuario.rol === 'skn_admin') { %>
-                  <span class="badge badge-danger">👑 SKN Admin</span>
-                <% } else if (usuario.rol === 'skn_subadmin') { %>
-                  <span class="badge badge-primary">🛡️ SKN SubAdmin</span>
-                <% } else if (usuario.rol === 'skn_user') { %>
-                  <span class="badge badge-success">👤 SKN Usuario</span>
-                <% } else if (usuario.rol === 'empresa_admin') { %>
-                  <span class="badge badge-warning">🏢 Empresa Admin</span>
-                <% } else { %>
-                  <span class="badge badge-secondary">👥 Empresa Usuario</span>
-                <% } %>
-              <% } %>
-            </td>
-            <td>
-              <% if (usuario.activo) { %>
-                <span class="badge badge-success">Activo</span>
-              <% } else { %>
-                <span class="badge badge-warning">Pendiente</span>
-              <% } %>
-            </td>
-            <td><%= new Date(usuario.fecha_registro).toLocaleDateString('es-ES') %></td>
-            <td>
-              <a href="/usuarios/<%= usuario.id %>/editar" class="btn-small btn-primary" title="Editar usuario">
-                ✏️ Editar
-              </a>
-              
-              <% if (!usuario.activo && user.rol === 'skn_admin') { %>
-                <form action="/usuarios/<%= usuario.id %>/aprobar" method="POST" style="display: inline;">
-                  <button type="submit" class="btn-small btn-success" title="Aprobar usuario">✅</button>
-                </form>
-              <% } %>
-              
-              <% if (usuario.activo) { %>
-                <form action="/usuarios/<%= usuario.id %>/desactivar" method="POST" style="display: inline;" onsubmit="return confirm('¿Desactivar este usuario?')">
-                  <button type="submit" class="btn-small btn-danger" title="Desactivar usuario">🚫</button>
-                </form>
-              <% } %>
-            </td>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Empresa</th>
+            <th>🏪 Sucursal</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Fecha Registro</th>
+            <th>Acciones</th>
           </tr>
-        <% }) %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <% usuarios.forEach(usuario => { %>
+            <tr>
+              <td><%= usuario.id %></td>
+              <td><%= usuario.nombre %></td>
+              <td><%= usuario.email %></td>
+              <td><%= usuario.empresa_nombre || 'N/A' %></td>
+              <td>
+                <% if (usuario.sucursal_nombre) { %>
+                  <div style="font-weight: 600; color: #2d3748;">
+                    📍 <%= usuario.sucursal_nombre %>
+                  </div>
+                  <div style="font-size: 12px; color: #718096; margin-top: 2px;">
+                    <%= usuario.sucursal_direccion %>
+                  </div>
+                  <div style="font-size: 11px; color: #a0aec0;">
+                    <%= usuario.sucursal_ciudad %>, <%= usuario.sucursal_provincia %>
+                  </div>
+                <% } else { %>
+                  <span style="color: #cbd5e0;">Sin sucursal</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (user.rol === 'skn_admin') { %>
+                  <form action="/usuarios/<%= usuario.id %>/cambiar-rol" method="POST" style="display: inline;">
+                    <select name="rol" onchange="this.form.submit()" class="<%= usuario.rol.startsWith('skn_') ? 'badge-success' : 'badge-secondary' %>">
+                      <option value="skn_admin" <%= usuario.rol === 'skn_admin' ? 'selected' : '' %>>👑 SKN Admin</option>
+                      <option value="skn_subadmin" <%= usuario.rol === 'skn_subadmin' ? 'selected' : '' %>>🛡️ SKN SubAdmin</option>
+                      <option value="skn_user" <%= usuario.rol === 'skn_user' ? 'selected' : '' %>>👤 SKN Usuario</option>
+                      <option value="empresa_admin" <%= usuario.rol === 'empresa_admin' ? 'selected' : '' %>>🏢 Empresa Admin</option>
+                      <option value="empresa_user" <%= usuario.rol === 'empresa_user' ? 'selected' : '' %>>👥 Empresa Usuario</option>
+                    </select>
+                  </form>
+                <% } else { %>
+                  <% if (usuario.rol === 'skn_admin') { %>
+                    <span class="badge badge-danger">👑 SKN Admin</span>
+                  <% } else if (usuario.rol === 'skn_subadmin') { %>
+                    <span class="badge badge-primary">🛡️ SKN SubAdmin</span>
+                  <% } else if (usuario.rol === 'skn_user') { %>
+                    <span class="badge badge-success">👤 SKN Usuario</span>
+                  <% } else if (usuario.rol === 'empresa_admin') { %>
+                    <span class="badge badge-warning">🏢 Empresa Admin</span>
+                  <% } else { %>
+                    <span class="badge badge-secondary">👥 Empresa Usuario</span>
+                  <% } %>
+                <% } %>
+              </td>
+              <td>
+                <% if (usuario.activo) { %>
+                  <span class="badge badge-success">✅ Activo</span>
+                <% } else { %>
+                  <span class="badge badge-warning">⏳ Pendiente</span>
+                <% } %>
+              </td>
+              <td><%= new Date(usuario.fecha_registro).toLocaleDateString('es-ES') %></td>
+              <td>
+                <a href="/usuarios/<%= usuario.id %>/editar" class="btn-small btn-primary" title="Editar usuario">
+                  ✏️ Editar
+                </a>
+                
+                <% if (!usuario.activo && user.rol === 'skn_admin') { %>
+                  <form action="/usuarios/<%= usuario.id %>/aprobar" method="POST" style="display: inline;">
+                    <button type="submit" class="btn-small btn-success" title="Aprobar usuario">✅</button>
+                  </form>
+                <% } %>
+                
+                <% if (usuario.activo) { %>
+                  <form action="/usuarios/<%= usuario.id %>/desactivar" method="POST" style="display: inline;" onsubmit="return confirm('¿Desactivar este usuario?')">
+                    <button type="submit" class="btn-small btn-danger" title="Desactivar usuario">🚫</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
   </main>
 
   <style>
+    /* Stats Container */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      border-radius: 12px;
+      padding: 20px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-icon {
+      font-size: 40px;
+      opacity: 0.9;
+    }
+
+    .stat-info {
+      flex: 1;
+    }
+
+    .stat-number {
+      font-size: 32px;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-top: 5px;
+    }
+
+    /* Filters Panel */
+    .filters-panel {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .filters-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .filter-group label {
+      font-weight: 600;
+      color: #2d3748;
+      font-size: 14px;
+    }
+
+    .filter-group input,
+    .filter-group select {
+      padding: 10px 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+      background: white;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+      outline: none;
+      border-color: #4299e1;
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 10px;
+      grid-column: 1 / -1;
+      justify-content: flex-start;
+    }
+
+    .btn-secondary {
+      background: #718096;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #4a5568;
+    }
+
+    /* Results Count */
+    .results-count {
+      padding: 12px 20px;
+      background: #f7fafc;
+      border-left: 4px solid #4299e1;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-weight: 500;
+      color: #2d3748;
+    }
+
+    /* Table Responsive */
+    .table-responsive {
+      overflow-x: auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: #f7fafc;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      color: #2d3748;
+      border-bottom: 2px solid #e2e8f0;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+
+    tr:hover {
+      background: #f7fafc;
+    }
+
     .btn-small {
       padding: 5px 10px;
       font-size: 12px;
@@ -142,8 +426,23 @@
       margin: 0;
     }
 
-    td {
-      white-space: nowrap;
+    /* Responsive */
+    @media (max-width: 768px) {
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
+
+      .filters-form {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-actions {
+        flex-direction: column;
+      }
+
+      .filter-actions .btn {
+        width: 100%;
+      }
     }
   </style>
 

@@ -48,6 +48,9 @@
               <option value="abierto" <%= filtros?.estado === 'abierto' ? 'selected' : '' %>>⏳ Abierto</option>
               <option value="en_proceso" <%= filtros?.estado === 'en_proceso' ? 'selected' : '' %>>🔄 En Proceso</option>
               <option value="cerrado" <%= filtros?.estado === 'cerrado' ? 'selected' : '' %>>✅ Cerrado</option>
+              <% if (esBelen) { %>
+                <option value="finalizado" <%= filtros?.estado === 'finalizado' ? 'selected' : '' %>>🏁 Finalizado</option>
+              <% } %>
               <option value="cancelado" <%= filtros?.estado === 'cancelado' ? 'selected' : '' %>>⛔ Cancelado</option>
             </select>
           </div>
@@ -127,12 +130,13 @@
               <th>ID</th>
               <% if (esSKN) { %>
                 <th>Empresa</th>
+                <th>📍 Sucursal</th>
               <% } %>
               <th>Título</th>
               <th>Solicitante</th>
               <th>Estado</th>
               <th>Prioridad</th>
-              <th>Asignado a</th>
+              <th>👨‍💼 Técnicos</th>
               <th>Fecha</th>
               <th>Acciones</th>
             </tr>
@@ -150,6 +154,9 @@
               } else if (ticket.estado === 'cerrado') {
                 estadoBadge = 'badge-success';
                 estadoTexto = '✅ Cerrado';
+              } else if (ticket.estado === 'finalizado') {
+                estadoBadge = 'badge-success';
+                estadoTexto = '🏁 Finalizado';
               } else if (ticket.estado === 'cancelado') {
                 estadoBadge = 'badge';
                 estadoTexto = '⛔ Cancelado';
@@ -175,12 +182,31 @@
                 <td><strong>#<%= ticket.id %></strong></td>
                 <% if (esSKN) { %>
                   <td><%= ticket.empresa_nombre %></td>
+                  <td>
+                    <% if (ticket.sucursal_nombre) { %>
+                      <strong><%= ticket.sucursal_nombre %></strong><br>
+                      <small style="color: #2ecc71;">
+                        📍 <%= ticket.sucursal_direccion || '' %>
+                        <% if (ticket.sucursal_ciudad) { %>, <%= ticket.sucursal_ciudad %><% } %>
+                      </small>
+                    <% } else { %>
+                      <small style="color: #95a5a6;">Sin especificar</small>
+                    <% } %>
+                  </td>
                 <% } %>
                 <td><%= ticket.titulo %></td>
                 <td><%= ticket.solicitante_nombre %></td>
                 <td><span class="badge <%= estadoBadge %>"><%= estadoTexto %></span></td>
                 <td><span class="badge <%= prioridadBadge %>"><%= prioridadTexto %></span></td>
-                <td><%= ticket.asignado_nombre || '⚪ Sin asignar' %></td>
+                <td>
+                  <% if (ticket.tecnicos_asignados && ticket.tecnicos_asignados.length > 0) { %>
+                    <% ticket.tecnicos_asignados.forEach((tec, index) => { %>
+                      <%= tec.nombre %><% if (index < ticket.tecnicos_asignados.length - 1) { %>, <% } %>
+                    <% }); %>
+                  <% } else { %>
+                    ⚪ Sin asignar
+                  <% } %>
+                </td>
                 <td><%= new Date(ticket.fecha_creacion).toLocaleDateString('es-AR') %></td>
                 <td>
                   <a href="/tickets/<%= ticket.id %>" class="btn btn-sm">👁️ Ver</a>

@@ -29,7 +29,7 @@
       <% if (esSKN) { %>
         <div class="form-group">
           <label for="empresa_id">Empresa *</label>
-          <select id="empresa_id" name="empresa_id" required>
+          <select id="empresa_id" name="empresa_id" required onchange="cargarSucursales()">
             <option value="">Seleccionar empresa</option>
             <% empresas.forEach(emp => { %>
               <option value="<%= emp.id %>"><%= emp.nombre %></option>
@@ -37,10 +37,46 @@
           </select>
           <small>💡 Como usuario SKN, puedes crear tickets para cualquier empresa</small>
         </div>
+
+        <div class="form-group" id="sucursal-group" style="display: none;">
+          <label for="sucursal_id">Sucursal / Sede</label>
+          <select id="sucursal_id" name="sucursal_id">
+            <option value="">Sin especificar</option>
+          </select>
+          <small id="sucursal-info"></small>
+        </div>
+
+        <div class="form-group">
+          <label for="tecnicos_ids">Asignar Técnicos (Opcional)</label>
+          <select id="tecnicos_ids" name="tecnicos_ids" multiple size="5">
+            <% tecnicos.forEach(tec => { %>
+              <option value="<%= tec.id %>"><%= tec.nombre %></option>
+            <% }) %>
+          </select>
+          <small>💡 Mantén presionado Ctrl (Windows) o Cmd (Mac) para seleccionar múltiples técnicos</small>
+        </div>
       <% } else { %>
         <div class="alert alert-warning">
           🏢 Empresa: <strong><%= user.empresa_nombre %></strong>
         </div>
+
+        <% if (sucursales && sucursales.length > 0) { %>
+          <div class="form-group">
+            <label for="sucursal_id">Sucursal / Sede donde se registra la tarea *</label>
+            <select id="sucursal_id" name="sucursal_id" required onchange="mostrarDireccion()">
+              <option value="">Seleccionar sucursal</option>
+              <% sucursales.forEach(suc => { %>
+                <option value="<%= suc.id %>" 
+                        data-direccion="<%= suc.direccion %>" 
+                        data-ciudad="<%= suc.ciudad || '' %>" 
+                        data-provincia="<%= suc.provincia || '' %>">
+                  <%= suc.nombre %>
+                </option>
+              <% }) %>
+            </select>
+            <small id="sucursal-info" class="info-direccion"></small>
+          </div>
+        <% } %>
       <% } %>
 
       <div class="form-group">
@@ -112,6 +148,67 @@
     // Datos de situaciones desde el servidor
     const situaciones = <%- JSON.stringify(situaciones || []) %>;
 
+    // Cargar sucursales cuando se selecciona una empresa (solo para SKN)
+    async function cargarSucursales() {
+      const empresaId = document.getElementById('empresa_id').value;
+      const sucursalGroup = document.getElementById('sucursal-group');
+      const sucursalSelect = document.getElementById('sucursal_id');
+      
+      if (!empresaId) {
+        sucursalGroup.style.display = 'none';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/tickets/api/sucursales/${empresaId}`);
+        const sucursales = await response.json();
+        
+        sucursalSelect.innerHTML = '<option value="">Sin especificar</option>';
+        
+        if (sucursales.length > 0) {
+          sucursales.forEach(suc => {
+            const option = document.createElement('option');
+            option.value = suc.id;
+            option.textContent = suc.nombre;
+            option.dataset.direccion = suc.direccion || '';
+            option.dataset.ciudad = suc.ciudad || '';
+            option.dataset.provincia = suc.provincia || '';
+            sucursalSelect.appendChild(option);
+          });
+          sucursalGroup.style.display = 'block';
+        } else {
+          sucursalGroup.style.display = 'none';
+        }
+        
+        // Agregar evento para mostrar dirección
+        sucursalSelect.addEventListener('change', mostrarDireccion);
+      } catch (error) {
+        console.error('Error al cargar sucursales:', error);
+      }
+    }
+
+    // Mostrar dirección de la sucursal seleccionada
+    function mostrarDireccion() {
+      const select = document.getElementById('sucursal_id');
+      const selectedOption = select.options[select.selectedIndex];
+      const infoDiv = document.getElementById('sucursal-info');
+      
+      if (selectedOption.value && selectedOption.dataset.direccion) {
+        let direccion = `📍 ${selectedOption.dataset.direccion}`;
+        if (selectedOption.dataset.ciudad) {
+          direccion += `, ${selectedOption.dataset.ciudad}`;
+        }
+        if (selectedOption.dataset.provincia) {
+          direccion += `, ${selectedOption.dataset.provincia}`;
+        }
+        infoDiv.textContent = direccion;
+        infoDiv.style.color = '#2ecc71';
+        infoDiv.style.fontWeight = 'bold';
+      } else {
+        infoDiv.textContent = '';
+      }
+    }
+
     function updateSituaciones() {
       const tipoSoporte = document.getElementById('tipo_soporte').value;
       const situacionSelect = document.getElementById('situacion_soporte_id');
@@ -155,10 +252,14 @@
     // Inicializar al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
       updateSituaciones();
+      // Si no es SKN y hay sucursales, mostrar dirección de la primera seleccionada
+      <% if (!esSKN && sucursales && sucursales.length > 0) { %>
+        const sucursalSelect = document.getElementById('sucursal_id');
+        if (sucursalSelect) {
+          sucursalSelect.addEventListener('change', mostrarDireccion);
+        }
+      <% } %>
     });
-    
-    // Ejecutar al cargar la página
-    document.addEventListener('DOMContentLoaded', toggleImagenRequerida);
   </script>
 </body>
 </html>

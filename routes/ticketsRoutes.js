@@ -11,6 +11,9 @@ router.post('/nuevo', isAuthenticated, uploadTickets.single('imagen_inicial'), t
 router.get('/:id', isAuthenticated, ticketsController.detalle);
 router.post('/:id/comentario', isAuthenticated, ticketsController.agregarComentario);
 
+// API para obtener sucursales por empresa
+router.get('/api/sucursales/:empresa_id', isAuthenticated, ticketsController.getSucursalesPorEmpresa);
+
 // Subir y eliminar imágenes
 router.post('/:id/imagen', isAuthenticated, uploadTickets.single('imagen'), ticketsController.subirImagen);
 router.post('/:id/imagen/:imagenId/eliminar', isAuthenticated, ticketsController.eliminarImagen);
