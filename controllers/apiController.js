@@ -1,5 +1,9 @@
 const db = require('../database');
 const bcrypt = require('bcrypt');
+const { Expo } = require('expo-server-sdk');
+
+// Crear instancia de Expo
+const expo = new Expo();
 
 const apiController = {
   // LOGIN para app móvil
@@ -285,7 +289,136 @@ const apiController = {
         message: 'Error al obtener detalle' 
       });
     }
+  },
+
+  // REGISTRAR PUSH TOKEN
+  registerPushToken: async (req, res) => {
+    try {
+      const { userId, pushToken, platform } = req.body;
+
+      if (!userId || !pushToken) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'userId y pushToken son requeridos' 
+        });
+      }
+
+      // Validar que el token sea válido de Expo
+      if (!Expo.isExpoPushToken(pushToken)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Token de push inválido' 
+        });
+      }
+
+      // Insertar o actualizar token
+      await db.query(
+        `INSERT INTO push_tokens (usuario_id, token, platform, activo)
+         VALUES ($1, $2, $3, true)
+         ON CONFLICT (usuario_id, token) 
+         DO UPDATE SET 
+           platform = EXCLUDED.platform,
+           activo = true,
+           fecha_actualizacion = TIMEZONE('America/Argentina/Buenos_Aires', NOW())`,
+        [userId, pushToken, platform || 'unknown']
+      );
+
+      console.log(`[Push Token] Registrado para usuario ${userId}: ${pushToken}`);
+
+      res.json({ 
+        success: true, 
+        message: 'Push token registrado correctamente' 
+      });
+
+    } catch (error) {
+      console.error('Error registrando push token:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Error al registrar push token' 
+      });
+    }
+  },
+
+  // CONTADOR DE TICKETS (para notificaciones web)
+  getTicketsCount: async (req, res) => {
+    try {
+      const result = await db.query(
+        `SELECT COUNT(*) as count 
+         FROM tickets 
+         WHERE estado NOT IN ('cerrado', 'finalizado')`
+      );
+
+      res.json({ 
+        success: true, 
+        count: parseInt(result.rows[0].count) 
+      });
+
+    } catch (error) {
+      console.error('Error contando tickets:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Error al contar tickets' 
+      });
+    }
   }
 };
+
+// FUNCIÓN AUXILIAR: Enviar notificación push
+async function enviarNotificacionPush(userId, titulo, mensaje, data = {}) {
+  try {
+    console.log(`[Push] Intentando enviar notificación a usuario ${userId}`);
+
+    // Obtener tokens activos del usuario
+    const result = await db.query(
+      'SELECT token FROM push_tokens WHERE usuario_id = $1 AND activo = true',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      console.log(`[Push] Usuario ${userId} no tiene tokens registrados`);
+      return { success: false, message: 'Usuario sin tokens' };
+    }
+
+    const tokens = result.rows.map(row => row.token);
+    console.log(`[Push] Enviando a ${tokens.length} dispositivo(s)`);
+
+    // Crear mensajes
+    const messages = tokens.map(token => ({
+      to: token,
+      sound: 'default',
+      title: titulo,
+      body: mensaje,
+      data: data,
+      priority: 'high',
+      badge: 1,
+      channelId: 'default'
+    }));
+
+    // Enviar en chunks (Expo requiere esto)
+    const chunks = expo.chunkPushNotifications(messages);
+    const tickets = [];
+
+    for (const chunk of chunks) {
+      try {
+        const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+        tickets.push(...ticketChunk);
+        console.log(`[Push] Chunk enviado exitosamente`);
+      } catch (error) {
+        console.error('[Push] Error enviando chunk:', error);
+      }
+    }
+
+    console.log(`[Push] Notificación enviada exitosamente a usuario ${userId}`);
+    return { success: true, tickets };
+
+  } catch (error) {
+    console.error('[Push] Error en enviarNotificacionPush:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Exportar controlador y función auxiliar
+module.exports = apiController;
+module.exports.enviarNotificacionPush = enviarNotificacionPush;
 
 module.exports = apiController;

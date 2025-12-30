@@ -30,9 +30,15 @@ const upload = multer({
 // LOGIN
 router.post('/mobile/login', apiController.login);
 
+// PUSH NOTIFICATIONS
+router.post('/mobile/register-push-token', apiController.registerPushToken);
+
 // TICKETS
 router.get('/mobile/tickets', apiController.getTickets);
 router.get('/mobile/tickets/:id', apiController.getTicketDetalle);
 router.put('/mobile/tickets/:id/estado', upload.single('imagen'), apiController.cambiarEstado);
+
+// WEB API (para notificaciones del dashboard)
+router.get('/tickets/count', apiController.getTicketsCount);
 
 module.exports = router;
