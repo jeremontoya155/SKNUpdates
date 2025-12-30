@@ -134,12 +134,32 @@ const apiController = {
   cambiarEstado: async (req, res) => {
     try {
       const { id } = req.params;
-      const { estado, userId } = req.body;
+      const { estado, userId, comentario } = req.body;
+      const imagen = req.file; // Multer guarda el archivo aquí
+
+      console.log('[API Mobile] Datos recibidos:');
+      console.log('  req.params:', req.params);
+      console.log('  req.body:', req.body);
+      console.log('  req.file:', req.file);
 
       if (!estado || !userId) {
         return res.status(400).json({ 
           success: false, 
           message: 'Estado y userId requeridos' 
+        });
+      }
+
+      if (!comentario || !comentario.trim()) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'El comentario es requerido' 
+        });
+      }
+
+      if (!imagen) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'La imagen es requerida' 
         });
       }
 
@@ -156,7 +176,14 @@ const apiController = {
         });
       }
 
-      // Actualizar estado
+      // Obtener el estado anterior
+      const ticketAnterior = await db.query(
+        'SELECT estado FROM tickets WHERE id = $1',
+        [id]
+      );
+      const estadoAnterior = ticketAnterior.rows[0]?.estado;
+
+      // Actualizar estado del ticket
       await db.query(
         `UPDATE tickets 
          SET estado = $1
@@ -164,9 +191,22 @@ const apiController = {
         [estado, id]
       );
 
+      // Guardar en historial con imagen y comentario
+      const rutaImagen = imagen.path;
+      
+      await db.query(
+        `INSERT INTO tickets_historial_estado 
+         (ticket_id, usuario_id, estado_anterior, estado_nuevo, comentario, imagen_ruta, fecha_cambio) 
+         VALUES ($1, $2, $3, $4, $5, $6, TIMEZONE('America/Argentina/Buenos_Aires', NOW()))`,
+        [id, userId, estadoAnterior, estado, comentario.trim(), rutaImagen]
+      );
+
+      console.log('[API Mobile] Estado actualizado exitosamente');
+
       res.json({
         success: true,
-        message: 'Estado actualizado correctamente'
+        message: 'Estado actualizado correctamente',
+        imagen: rutaImagen
       });
 
     } catch (error) {
