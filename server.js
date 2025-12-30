@@ -49,6 +49,7 @@ const empresasRoutes = require('./routes/empresasRoutes');
 const evaluacionesRoutes = require('./routes/evaluacionesRoutes');
 const situacionesRoutes = require('./routes/situacionesRoutes');
 const checklistRoutes = require('./routes/checklistRoutes');
+const apiRoutes = require('./routes/apiRoutes');
 
 // Usar rutas
 app.use('/auth', authRoutes);
@@ -63,6 +64,7 @@ app.use('/empresas', empresasRoutes);
 app.use('/evaluaciones', evaluacionesRoutes); // SOLO admin SKN
 app.use('/situaciones', situacionesRoutes); // SOLO admin SKN
 app.use('/checklist', checklistRoutes); // Para técnicos asignados
+app.use('/api', apiRoutes); // API REST para app móvil
 
 // Ruta principal
 app.get('/', (req, res) => {
