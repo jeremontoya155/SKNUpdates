@@ -95,7 +95,7 @@ const apiController = {
           s.ciudad as sucursal_ciudad,
           s.provincia as sucursal_provincia
         FROM tickets t
-        LEFT JOIN tickets_tecnicos tt ON t.id = tt.ticket_id AND tt.activo = true
+        INNER JOIN tickets_tecnicos tt ON t.id = tt.ticket_id AND tt.activo = true
         LEFT JOIN empresas e ON t.empresa_id = e.id
         LEFT JOIN sucursales s ON t.sucursal_id = s.id
         WHERE tt.usuario_id = $1
