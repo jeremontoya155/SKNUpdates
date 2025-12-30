@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const API_URL = 'https://sknupdates-production.up.railway.app/api';
+const API_URL = 'http://localhost:3000/api';
 
 async function debugAPI() {
   console.log('\n🔍 DEBUG DETALLADO DE API\n');

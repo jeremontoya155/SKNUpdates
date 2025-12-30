@@ -80,7 +80,7 @@ const apiController = {
 
       // Obtener tickets donde el técnico está asignado
       const query = `
-        SELECT DISTINCT
+        SELECT 
           t.id,
           t.titulo,
           t.descripcion,
@@ -159,8 +159,7 @@ const apiController = {
       // Actualizar estado
       await db.query(
         `UPDATE tickets 
-         SET estado = $1, 
-             fecha_actualizacion = TIMEZONE('America/Argentina/Buenos_Aires', NOW())
+         SET estado = $1
          WHERE id = $2`,
         [estado, id]
       );
@@ -172,9 +171,11 @@ const apiController = {
 
     } catch (error) {
       console.error('Error al cambiar estado:', error);
+      console.error('Error stack:', error.stack);
       res.status(500).json({ 
         success: false, 
-        message: 'Error al cambiar estado' 
+        message: 'Error al cambiar estado',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   },
