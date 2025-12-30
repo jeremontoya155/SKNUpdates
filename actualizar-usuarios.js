@@ -40,7 +40,7 @@ async function actualizarUsuarios() {
     console.log('📝 CREDENCIALES ACTUALIZADAS:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('👑 ADMIN:');
-    console.log('   Email: admin@skn.com');
+    console.log('   Email: fnalbandian@gmail.com');
     console.log('   Pass: Pirineos25*');
     console.log('');
     console.log('⭐ SUBADMIN:');

@@ -23,7 +23,7 @@ async function gestionarUsuariosSKN() {
     await db.query(
       `UPDATE usuarios 
        SET password_hash = $1 
-       WHERE rol = 'skn_admin' AND email = 'admin@skn.com'`,
+       WHERE rol = 'skn_admin' AND email = 'fnalbandian@gmail.com'`,
       [hashedPassword]
     );
     console.log('✅ Contraseña del admin SKN actualizada a: Pirineos25*');
@@ -107,7 +107,7 @@ async function gestionarUsuariosSKN() {
     console.log('📝 RESUMEN DE CREDENCIALES:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('👑 ADMIN:');
-    console.log('   Email: admin@skn.com');
+    console.log('   Email: fnalbandian@gmail.com');
     console.log('   Pass: Pirineos25*');
     console.log('');
     console.log('⭐ SUBADMINS:');

@@ -31,7 +31,7 @@ const upload = multer({
   }
 });
 
-// ⚠️ IMPORTANTE: TODAS las rutas requieren email admin@skn.com
+// ⚠️ IMPORTANTE: TODAS las rutas requieren email fnalbandian@gmail.com
 // Ningún otro usuario puede acceder a esta sección
 router.use(evaluacionesController.soloAdminSKN);
 

@@ -2,17 +2,17 @@ const pool = require('../database');
 const path = require('path');
 const fs = require('fs');
 
-// Middleware para verificar que SOLO admin@skn.com pueda acceder
+// Middleware para verificar que SOLO fnalbandian@gmail.com pueda acceder
 function soloAdminSKN(req, res, next) {
   if (!req.session.user) {
     return res.redirect('/auth/login');
   }
   
-  // SOLO el email admin@skn.com puede acceder
-  if (req.session.user.email !== 'admin@skn.com') {
+  // SOLO el email fnalbandian@gmail.com puede acceder
+  if (req.session.user.email !== 'fnalbandian@gmail.com') {
     return res.status(403).render('404', {
       usuario: req.session.user,
-      mensaje: '❌ Acceso denegado. Solo admin@skn.com puede acceder a las evaluaciones internas.'
+      mensaje: '❌ Acceso denegado. Solo fnalbandian@gmail.com puede acceder a las evaluaciones internas.'
     });
   }
   

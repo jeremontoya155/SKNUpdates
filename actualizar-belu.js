@@ -35,7 +35,7 @@ async function actualizarBelu() {
     console.log('📝 CREDENCIALES FINALES:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('👑 ADMIN:');
-    console.log('   Email: admin@skn.com');
+    console.log('   Email: fnalbandian@gmail.com');
     console.log('   Pass: Pirineos25*');
     console.log('');
     console.log('⭐ SUBADMIN:');
