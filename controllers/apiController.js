@@ -112,6 +112,8 @@ const apiController = {
 
       const result = await db.query(query, [userId]);
 
+      console.log(`[API Mobile] Tickets encontrados para user ${userId}:`, result.rows.length);
+
       res.json({
         success: true,
         tickets: result.rows
@@ -119,9 +121,11 @@ const apiController = {
 
     } catch (error) {
       console.error('Error al obtener tickets:', error);
+      console.error('Error stack:', error.stack);
       res.status(500).json({ 
         success: false, 
-        message: 'Error al obtener tickets' 
+        message: 'Error al obtener tickets',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   },
